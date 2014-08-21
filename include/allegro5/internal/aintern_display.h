@@ -65,7 +65,6 @@ struct ALLEGRO_DISPLAY_INTERFACE
    void* (*prepare_vertex_cache)(ALLEGRO_DISPLAY *d, int num_new_vertices);
    
    void (*update_transformation)(ALLEGRO_DISPLAY* d, ALLEGRO_BITMAP *target);
-   void (*set_projection)(ALLEGRO_DISPLAY *d);
 
    /* Unused */
    void (*shutdown)(void);
@@ -141,9 +140,8 @@ struct ALLEGRO_DISPLAY
    ALLEGRO_BLENDER cur_blender;
 
    ALLEGRO_SHADER* default_shader;
-
-   ALLEGRO_TRANSFORM proj_transform;
-   ALLEGRO_TRANSFORM view_transform;
+   
+   ALLEGRO_TRANSFORM projview_transform;
 
    _ALLEGRO_RENDER_STATE render_state;
 
