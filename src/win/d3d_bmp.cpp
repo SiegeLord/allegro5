@@ -526,7 +526,7 @@ void _al_d3d_prepare_bitmaps_for_reset(ALLEGRO_DISPLAY_D3D *disp)
       ALLEGRO_BITMAP *bmp = *bptr;
       ALLEGRO_BITMAP_EXTRA_D3D *extra = get_extra(bmp);
       int bitmap_flags = al_get_bitmap_flags(bmp);
-      if ((void *)bmp->display == (void *)disp) {
+      if ((void *)_al_get_bitmap_display(bmp) == (void *)disp) {
          if ((bitmap_flags & ALLEGRO_MEMORY_BITMAP) ||
             (bitmap_flags & ALLEGRO_NO_PRESERVE_TEXTURE) ||
    	    !bmp->dirty ||
@@ -554,7 +554,7 @@ bool _al_d3d_recreate_bitmap_textures(ALLEGRO_DISPLAY_D3D *disp)
       ALLEGRO_BITMAP *bmp = *bptr;
       ALLEGRO_BITMAP_EXTRA_D3D *extra = get_extra(bmp);
 
-      if ((void *)bmp->display == (void *)disp) {
+      if ((void *)_al_get_bitmap_display(bmp) == (void *)disp) {
 	      if (!d3d_create_textures(disp, extra->texture_w,
             extra->texture_h,
             al_get_bitmap_flags(bmp),
@@ -582,7 +582,8 @@ void _al_d3d_refresh_texture_memory(ALLEGRO_DISPLAY *display)
       ALLEGRO_BITMAP **bptr = (ALLEGRO_BITMAP **)_al_vector_ref(&display->bitmaps, i);
       ALLEGRO_BITMAP *bmp = *bptr;
       ALLEGRO_BITMAP_EXTRA_D3D *extra = get_extra(bmp);
-      ALLEGRO_DISPLAY_D3D *bmps_display = (ALLEGRO_DISPLAY_D3D *)bmp->display;
+      ALLEGRO_DISPLAY_D3D *bmps_display =
+         (ALLEGRO_DISPLAY_D3D *)_al_get_bitmap_display(bmp);
       int bitmap_flags = al_get_bitmap_flags(bmp);
 
       if ((bitmap_flags & ALLEGRO_MEMORY_BITMAP) || bmp->parent) {
@@ -610,7 +611,7 @@ static bool d3d_upload_bitmap(ALLEGRO_BITMAP *bitmap)
    int w = bitmap->w;
    int h = bitmap->h;
 
-   if (d3d_bmp->display->device_lost)
+   if (_al_get_bitmap_display(d3d_bmp)->device_lost)
       return false;
 
    if (d3d_bmp->initialized != true) {
@@ -639,7 +640,8 @@ static bool d3d_upload_bitmap(ALLEGRO_BITMAP *bitmap)
       if (d3d_bmp->texture_h < 16) d3d_bmp->texture_h = 16;
 
       if (d3d_bmp->video_texture == 0)
-         if (!d3d_create_textures(d3d_bmp->display, d3d_bmp->texture_w,
+         if (!d3d_create_textures(_al_get_bitmap_display(d3d_bmp),
+               d3d_bmp->texture_w,
                d3d_bmp->texture_h,
                al_get_bitmap_flags(bitmap),
                &d3d_bmp->video_texture,
@@ -664,6 +666,8 @@ static void d3d_draw_bitmap_region(
    ALLEGRO_BITMAP *dest = al_get_target_bitmap();
    ALLEGRO_BITMAP_EXTRA_D3D *d3d_dest = get_extra(dest);
    ALLEGRO_BITMAP_EXTRA_D3D *d3d_src = get_extra(src);
+   ALLEGRO_DISPLAY *disp_dest = _al_get_bitmap_display(dest);
+   ALLEGRO_DISPLAY *disp_src = _al_get_bitmap_display(src);
    
    ASSERT(src->parent == NULL);
 
@@ -674,7 +678,7 @@ static void d3d_draw_bitmap_region(
       return;
    }
    
-   if (d3d_dest->display->device_lost)
+   if (disp_dest->device_lost)
       return;
 
    _al_d3d_set_bitmap_clip(dest);
@@ -688,16 +692,16 @@ static void d3d_draw_bitmap_region(
    if (d3d_src->is_backbuffer) {
       IDirect3DSurface9 *surface;
       D3DSURFACE_DESC desc;
-      if (d3d_src->display->render_target->GetDesc(&desc) != D3D_OK) {
+      if (disp_src->render_target->GetDesc(&desc) != D3D_OK) {
          ALLEGRO_ERROR("d3d_draw_bitmap_region: GetDesc failed.\n");
          return;
       }
       if (desc.MultiSampleType == D3DMULTISAMPLE_NONE) {
-         surface = d3d_src->display->render_target;
+         surface = disp_src->render_target;
       }
       else {
          RECT r;
-         if (d3d_src->display->device->CreateRenderTarget(
+         if (disp_src->device->CreateRenderTarget(
 		desc.Width,
 		desc.Height,
 		desc.Format,
@@ -715,8 +719,8 @@ static void d3d_draw_bitmap_region(
 	 r.left = 0;
 	 r.right = desc.Width;
 	 r.bottom = desc.Height;
-	 if (d3d_src->display->device->StretchRect(
-	 	d3d_src->display->render_target,
+	 if (disp_src->device->StretchRect(
+		disp_src->render_target,
 		&r,
 		surface,
 		&r,
@@ -743,10 +747,10 @@ static void d3d_draw_bitmap_region(
       return;
    }
 
-   _al_d3d_set_blender(d3d_dest->display);
+   _al_d3d_set_blender(disp_dest);
 
    d3d_draw_textured_quad(
-      d3d_dest->display, src, tint,
+      disp_dest, src, tint,
       sx, sy, sw, sh, flags);
 }
 
@@ -773,7 +777,8 @@ static ALLEGRO_LOCKED_REGION *d3d_lock_region(ALLEGRO_BITMAP *bitmap,
    rect.bottom = y + h;
 
    if (d3d_bmp->is_backbuffer) {
-      ALLEGRO_DISPLAY_D3D *d3d_disp = (ALLEGRO_DISPLAY_D3D *)bitmap->display;
+      ALLEGRO_DISPLAY_D3D *d3d_disp =
+         (ALLEGRO_DISPLAY_D3D *)_al_get_bitmap_display(bitmap);
       if (d3d_disp->render_target->LockRect(&d3d_bmp->locked_rect, &rect, Flags) != D3D_OK) {
          ALLEGRO_ERROR("LockRect failed in d3d_lock_region.\n");
          return NULL;
@@ -839,7 +844,8 @@ static void d3d_unlock_region(ALLEGRO_BITMAP *bitmap)
    }
 
    if (d3d_bmp->is_backbuffer) {
-      ALLEGRO_DISPLAY_D3D *d3d_disp = (ALLEGRO_DISPLAY_D3D *)bitmap->display;
+      ALLEGRO_DISPLAY_D3D *d3d_disp =
+         (ALLEGRO_DISPLAY_D3D *)_al_get_bitmap_display(bitmap);
       d3d_disp->render_target->UnlockRect();
    }
    else {
