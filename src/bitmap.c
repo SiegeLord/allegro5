@@ -39,6 +39,11 @@ static ALLEGRO_BITMAP *create_memory_bitmap(ALLEGRO_DISPLAY *current_display,
    ALLEGRO_BITMAP *bitmap;
    int pitch;
 
+   if (_al_pixel_format_is_video_only(format)) {
+      /* Can't have a video-only memory bitmap... */
+      return NULL;
+   }
+
    format = _al_get_real_pixel_format(current_display, format);
 
    bitmap = al_calloc(1, sizeof *bitmap);
@@ -477,6 +482,9 @@ void _al_convert_bitmap_data(
    ASSERT(src);
    ASSERT(dst);
    ASSERT(_al_pixel_format_is_real(dst_format));
+   /* Video-only formats don't have conversion functions */
+   ASSERT(!_al_pixel_format_is_video_only(src_format));
+   ASSERT(!_al_pixel_format_is_video_only(dst_format));
 
    /* Use memcpy if no conversion is needed. */
    if (src_format == dst_format) {

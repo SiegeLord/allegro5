@@ -40,6 +40,12 @@ ALLEGRO_LOCKED_REGION *al_lock_bitmap_region(ALLEGRO_BITMAP *bitmap,
       bitmap = bitmap->parent;
    }
 
+   if (_al_pixel_format_is_compressed(format) &&
+         !_al_pixel_format_is_compressed(bitmap_format) {
+      /* Not implemented */
+      return NULL;
+   }
+
    if (bitmap->locked)
       return NULL;
 

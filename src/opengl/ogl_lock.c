@@ -89,6 +89,9 @@ static bool ogl_lock_region_nonbb_readwrite_fbo(
 static bool ogl_lock_region_nonbb_readwrite_nonfbo(
    ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap,
    int x, int gl_y, int w, int h, int format);
+static bool ogl_lock_region_compressed_readwrite (
+   ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap,
+   int x, int gl_y, int w, int h, int format);
 
 
 ALLEGRO_LOCKED_REGION *_al_ogl_lock_region_new(ALLEGRO_BITMAP *bitmap,
@@ -102,7 +105,16 @@ ALLEGRO_LOCKED_REGION *_al_ogl_lock_region_new(ALLEGRO_BITMAP *bitmap,
    bool ok;
 
    if (format == ALLEGRO_PIXEL_FORMAT_ANY) {
-      format = al_get_bitmap_format(bitmap);
+      /* Never pick compressed formats with ANY, as it interacts weirdly with
+       * existing code (e.g. al_get_pixel_size() etc) */
+      int bitmap_format = al_get_bitmap_format(bitmap);
+      if (_al_pixel_format_is_compressed(bitmap_format)) {
+         // XXX Get a good format from the driver?
+         format = ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE;
+      }
+      else {
+         format = bitmap_format;
+      }
    }
 
    disp = al_get_current_display();
@@ -236,10 +248,21 @@ static bool ogl_lock_region_nonbb_readwrite(
    ALLEGRO_BITMAP *old_target;
    bool fbo_was_set;
    bool ok;
+   int bitmap_format = al_get_bitmap_format(bitmap);
 
    ASSERT(bitmap->parent == NULL);
    ASSERT(bitmap->locked == false);
    ASSERT(_al_get_bitmap_display(bitmap) == al_get_current_display());
+
+   if (_al_pixel_format_is_compressed(bitmap_format)
+         && _al_pixel_format_is_compressed(format)) {
+      if (bitmap_format != format) {
+         /* If both are compressed, we only support the same format */
+         return false;
+      }
+      ok = ogl_lock_region_compressed_readwrite(bitmap, ogl_bitmap, x, gl_y,
+         w, h, format);
+   }
 
    /* Try to create an FBO if there isn't one. */
    old_target = al_get_target_bitmap();
@@ -385,7 +408,42 @@ static bool ogl_lock_region_nonbb_readwrite_nonfbo(
    return ok;
 }
 
+static bool ogl_lock_region_compressed_readwrite (
+   ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap,
+   int x, int gl_y, int w, int h, int format)
+{
+   const int pixel_size_bits = al_get_pixel_size_bits(format);
+   const int pitch = ogl_bitmap->true_w * pixel_size_bits / 8;
+   GLenum e;
+   bool ok;
+   (void) w;
 
+   ogl_bitmap->lock_buffer = al_malloc(pitch * ogl_bitmap->true_h);
+   if (ogl_bitmap->lock_buffer == NULL) {
+      return false;
+   }
+   glBindTexture(GL_TEXTURE_2D, ogl_bitmap->texture);
+   glGetCompressedTexImage(GL_TEXTURE_2D, 0, ogl_bitmap->lock_buffer);
+   
+   e = glGetError();
+   if (e) {
+      ALLEGRO_ERROR("glGetCompressedTexImage for format %s failed (%s).\n",
+         _al_pixel_format_name(format), _al_gl_error_string(e));
+      al_free(ogl_bitmap->lock_buffer);
+      ogl_bitmap->lock_buffer = NULL;
+      ok = false;
+   }
+
+   if (ok) {
+      bitmap->locked_region.data = ogl_bitmap->lock_buffer +
+         pitch * (gl_y + h - 1) + pixel_size_bits * x / 8;
+      bitmap->locked_region.format = format;
+      bitmap->locked_region.pitch = -pitch;
+      bitmap->locked_region.pixel_size = pixel_size;
+   }
+
+   return ok;
+}
 
 /*
  * Unlocking
@@ -402,6 +460,8 @@ static void ogl_unlock_region_nonbb_fbo_writeonly(ALLEGRO_BITMAP *bitmap,
 static void ogl_unlock_region_nonbb_fbo_readwrite(ALLEGRO_BITMAP *bitmap,
    ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap, int gl_y);
 static void ogl_unlock_region_nonbb_nonfbo(ALLEGRO_BITMAP *bitmap,
+   ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap, int gl_y);
+static void ogl_unlock_region_compressed_readwrite (ALLEGRO_BITMAP *bitmap,
    ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap, int gl_y);
 
 
@@ -473,6 +533,10 @@ static void ogl_unlock_region_non_readonly(ALLEGRO_BITMAP *bitmap,
       if (ogl_bitmap->fbo_info) {
          ALLEGRO_DEBUG("Unlocking non-backbuffer (FBO)\n");
          ogl_unlock_region_nonbb_fbo(bitmap, ogl_bitmap, gl_y, orig_format);
+      }
+      else if (_al_pixel_format_is_compressed(orig_format) &&
+               _al_pixel_format_is_compressed(lock_format)) {
+         ogl_unlock_region_compressed_readwrite(bitmap, ogl_bitmap, gl_y);
       }
       else {
          ALLEGRO_DEBUG("Unlocking non-backbuffer (non-FBO)\n");
@@ -671,6 +735,13 @@ static void ogl_unlock_region_nonbb_nonfbo(ALLEGRO_BITMAP *bitmap,
       ALLEGRO_ERROR("glTexSubImage2D for format %s failed (%s).\n",
          _al_pixel_format_name(lock_format), _al_gl_error_string(e));
    }
+}
+
+
+static void ogl_unlock_region_compressed_readwrite (ALLEGRO_BITMAP *bitmap,
+   ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap, int gl_y)
+{
+   
 }
 
 

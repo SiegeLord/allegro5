@@ -476,6 +476,8 @@ AL_ARRAY(float, _al_u8_to_float);
 void _al_init_pixels(void);
 bool _al_pixel_format_has_alpha(int format);
 bool _al_pixel_format_is_real(int format);
+bool _al_pixel_format_is_video_only(int format);
+bool _al_pixel_format_is_compressed(int format);
 int _al_get_real_pixel_format(ALLEGRO_DISPLAY *display, int format);
 char const *_al_pixel_format_name(ALLEGRO_PIXEL_FORMAT format);
 

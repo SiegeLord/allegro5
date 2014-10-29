@@ -119,6 +119,10 @@ int _al_ogl_get_glformat(int format, int component)
       {GL_RGBA, GL_UNSIGNED_BYTE, GL_RGBA}, /* ABGR_8888_LE */
       {GL_RGBA4, GL_UNSIGNED_SHORT_4_4_4_4, GL_RGBA}, /* RGBA_4444 */
       {GL_LUMINANCE, GL_UNSIGNED_BYTE, GL_LUMINANCE}, /* SINGLE_CHANNEL_8 */
+      {GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_UNSIGNED_INT_8_8_8_8, GL_RGBA}, /* RGBA_DXT1 */
+      {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_UNSIGNED_INT_8_8_8_8, GL_RGBA}, /* RGBA_DXT3 */
+      {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_UNSIGNED_INT_8_8_8_8, GL_RGBA}, /* RGBA_DXT5 */
+      {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_UNSIGNED_BYTE, GL_RGB}, /* RGB_DXT1 */
    };
   
    if (al_get_opengl_version() >= _ALLEGRO_OPENGL_VERSION_3_0) {
@@ -157,6 +161,10 @@ int _al_ogl_get_glformat(int format, int component)
       {GL_RGBA, GL_UNSIGNED_BYTE, GL_RGBA}, /* ABGR_8888_LE */
       {GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, GL_RGBA}, /* RGBA_4444 */
       {GL_LUMINANCE, GL_UNSIGNED_BYTE, GL_LUMINANCE}, /* SINGLE_CHANNEL_8 */
+      {0, 0, 0},
+      {0, 0, 0},
+      {0, 0, 0},
+      {0, 0, 0},
    };
    #endif
    
@@ -375,6 +383,17 @@ static int pot(int x)
    int y = 1;
    while (y < x) y *= 2;
    return y;
+}
+
+
+
+/* Helper to get the smallest larger multiple of 4. */
+static int multiple_of_4(int x)
+{
+   if (x % 4 == 0)
+      return x;
+   else
+      return (x / 4 + 1) * 4;
 }
 
 
@@ -629,6 +648,12 @@ ALLEGRO_BITMAP *_al_ogl_create_bitmap(ALLEGRO_DISPLAY *d, int w, int h,
    else {
       true_w = pot(w);
       true_h = pot(h);
+   }
+
+   /* Makes pitch calculation easier */
+   if (_al_pixel_format_is_compressed(format)) {
+      true_w = multiple_of_4(true_w);
+      true_h = multiple_of_4(true_h);
    }
 
    /* This used to be an iOS/Android only workaround - but
