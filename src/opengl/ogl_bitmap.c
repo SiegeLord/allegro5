@@ -34,6 +34,28 @@
 
 #include "ogl_helpers.h"
 
+int _al_ogl_pixel_alignment(int pixel_size, bool compressed)
+{
+   if (compressed) {
+      return 1;
+   }
+   /* Valid alignments are: 1, 2, 4, 8 bytes. */
+   switch (pixel_size) {
+      case 1:
+      case 2:
+      case 4:
+      case 8:
+         return pixel_size;
+      case 3:
+         return 1;
+      case 16: /* float32 */
+         return 4;
+      default:
+         ASSERT(false);
+         return 4;
+   }
+}
+
 ALLEGRO_DEBUG_CHANNEL("opengl")
 
 /* OpenGL does not support "locking", i.e. direct access to a memory
@@ -502,10 +524,12 @@ static bool ogl_upload_bitmap(ALLEGRO_BITMAP *bitmap)
    }
    else {
       unsigned char *buf;
-      int pix_size = al_get_pixel_size(bitmap_format);
-      buf = al_calloc(pix_size,
-         ogl_bitmap->true_h * ogl_bitmap->true_w);
-      glPixelStorei(GL_UNPACK_ALIGNMENT, pix_size);
+      int pix_size_bits = al_get_pixel_size_bits(bitmap_format);
+      bool compressed = _al_pixel_format_is_compressed(bitmap_format);
+      buf = al_calloc(1,
+         pix_size_bits * ogl_bitmap->true_h * ogl_bitmap->true_w / 8);
+      glPixelStorei(GL_UNPACK_ALIGNMENT, _al_ogl_pixel_alignment(
+         pix_size_bits / 8, compressed);
       glTexImage2D(GL_TEXTURE_2D, 0, get_glformat(bitmap_format, 0),
          ogl_bitmap->true_w, ogl_bitmap->true_h, 0,
          get_glformat(bitmap_format, 2),
@@ -677,7 +701,7 @@ ALLEGRO_BITMAP *_al_ogl_create_bitmap(ALLEGRO_DISPLAY *d, int w, int h,
 
    ASSERT(_al_pixel_format_is_real(format));
 
-   pitch = true_w * al_get_pixel_size(format);
+   pitch = true_w * al_get_pixel_size_bits(format) / 8;
 
    bitmap = al_calloc(1, sizeof *bitmap);
    ASSERT(bitmap);
@@ -694,7 +718,7 @@ ALLEGRO_BITMAP *_al_ogl_create_bitmap(ALLEGRO_DISPLAY *d, int w, int h,
    extra->true_h = true_h;
 
    if (!(flags & ALLEGRO_NO_PRESERVE_TEXTURE)) {
-      bitmap->memory = al_calloc(1, al_get_pixel_size(format)*w*h);
+      bitmap->memory = al_calloc(1, al_get_pixel_size_bits(format)*w*h/8);
    }
 
    return bitmap;
@@ -711,7 +735,7 @@ void _al_ogl_upload_bitmap_memory(ALLEGRO_BITMAP *bitmap, int format, void *ptr)
 {
    int w = bitmap->w;
    int h = bitmap->h;
-   int pixsize = al_get_pixel_size(format);
+   int pixsize_bits = al_get_pixel_size_bits(format);
    int y;
    ALLEGRO_BITMAP *tmp;
    ALLEGRO_LOCKED_REGION *lr;
@@ -730,12 +754,12 @@ void _al_ogl_upload_bitmap_memory(ALLEGRO_BITMAP *bitmap, int format, void *ptr)
 
    dst = (uint8_t *)lr->data;
    // we need to flip it
-   src = ((uint8_t *)ptr) + (pixsize * w * (h-1));
+   src = ((uint8_t *)ptr) + (pixsize_bits * w * (h-1) / 8);
 
    for (y = 0; y < h; y++) {
-      memcpy(dst, src, pixsize * w);
+      memcpy(dst, src, pixsize * w / 8);
       dst += lr->pitch;
-      src -= pixsize * w; // minus because it's flipped
+      src -= pixsize * w / 8; // minus because it's flipped
    }
 
    al_unlock_bitmap(tmp);
@@ -870,11 +894,11 @@ void _al_opengl_backup_dirty_bitmaps(ALLEGRO_DISPLAY *d, bool flip)
       ALLEGRO_DEBUG("Backing up dirty bitmap %p\n", b);
       lr = al_lock_bitmap(
          b,
-         ALLEGRO_PIXEL_FORMAT_ANY,
+         al_get_bitmap_format(b),
          ALLEGRO_LOCK_READONLY
       );
       if (lr) {
-         int line_size = al_get_pixel_size(al_get_bitmap_format(b)) * b->w;
+         int line_size = al_get_pixel_size_bits(al_get_bitmap_format(b)) * b->w / 8;
          for (y = 0; y < b->h; y++) {
             unsigned char *p = ((unsigned char *)lr->data) + lr->pitch * y;
             unsigned char *p2;

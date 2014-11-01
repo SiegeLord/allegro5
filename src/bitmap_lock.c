@@ -42,7 +42,7 @@ ALLEGRO_LOCKED_REGION *al_lock_bitmap_region(ALLEGRO_BITMAP *bitmap,
 
    if (_al_pixel_format_is_compressed(format) &&
          !_al_pixel_format_is_compressed(bitmap_format) {
-      /* It's not possible to decompress bitmaps this way at this time. */
+      /* It's not possible to compress bitmaps this way at this time. */
       return NULL;
    }
 
@@ -70,16 +70,18 @@ ALLEGRO_LOCKED_REGION *al_lock_bitmap_region(ALLEGRO_BITMAP *bitmap,
       ASSERT(bitmap->memory);
       if (format == ALLEGRO_PIXEL_FORMAT_ANY || bitmap_format == format || bitmap_format == f) {
          bitmap->locked_region.data = bitmap->memory
-            + bitmap->pitch * y + x * al_get_pixel_size(bitmap_format);
+            + bitmap->pitch * y + x * al_get_pixel_size_bits(bitmap_format) / 8;
          bitmap->locked_region.format = bitmap_format;
          bitmap->locked_region.pitch = bitmap->pitch;
          bitmap->locked_region.pixel_size = al_get_pixel_size(bitmap_format);
+         bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(bitmap_format);
       }
       else {
-         bitmap->locked_region.pitch = al_get_pixel_size(f) * width;
+         bitmap->locked_region.pitch = al_get_pixel_size_bits(f) * width / 8;
          bitmap->locked_region.data = al_malloc(bitmap->locked_region.pitch*height);
          bitmap->locked_region.format = f;
          bitmap->locked_region.pixel_size = al_get_pixel_size(f);
+         bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(f);
          if (!(bitmap->lock_flags & ALLEGRO_LOCK_WRITEONLY)) {
             _al_convert_bitmap_data(
                bitmap->memory, bitmap_format, bitmap->pitch,

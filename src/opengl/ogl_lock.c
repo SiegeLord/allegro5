@@ -37,28 +37,6 @@ ALLEGRO_DEBUG_CHANNEL("opengl")
  * Helpers - duplicates code in ogl_bitmap.c for now
  */
 
-static int ogl_pixel_alignment(int pixel_size, bool compressed)
-{
-   if (compressed) {
-      return 1;
-   }
-   /* Valid alignments are: 1, 2, 4, 8 bytes. */
-   switch (pixel_size) {
-      case 1:
-      case 2:
-      case 4:
-      case 8:
-         return pixel_size;
-      case 3:
-         return 1;
-      case 16: /* float32 */
-         return 4;
-      default:
-         ASSERT(false);
-         return 4;
-   }
-}
-
 static int ogl_pitch(int w, int pixel_size)
 {
    int pitch = w * pixel_size;
@@ -142,7 +120,7 @@ ALLEGRO_LOCKED_REGION *_al_ogl_lock_region_new(ALLEGRO_BITMAP *bitmap,
    glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
    {
       const int pixel_size = al_get_pixel_size(format);
-      const int pixel_alignment = ogl_pixel_alignment(pixel_size,
+      const int pixel_alignment = _al_ogl_pixel_alignment(pixel_size,
          _al_pixel_format_is_compressed(format));
       glPixelStorei(GL_PACK_ALIGNMENT, pixel_alignment);
       e = glGetError();
@@ -219,6 +197,7 @@ static bool ogl_lock_region_backbuffer(
    bitmap->locked_region.format = format;
    bitmap->locked_region.pitch = -pitch;
    bitmap->locked_region.pixel_size = pixel_size;
+   bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(format);
    return true;
 }
 
@@ -241,6 +220,7 @@ static bool ogl_lock_region_nonbb_writeonly(
    bitmap->locked_region.format = format;
    bitmap->locked_region.pitch = -pitch;
    bitmap->locked_region.pixel_size = pixel_size;
+   bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(format);
    return true;
 }
 
@@ -359,6 +339,7 @@ static bool ogl_lock_region_nonbb_readwrite_fbo(
       bitmap->locked_region.format = format;
       bitmap->locked_region.pitch = -pitch;
       bitmap->locked_region.pixel_size = pixel_size;
+      bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(format);
       return true;
    }
 
@@ -407,6 +388,7 @@ static bool ogl_lock_region_nonbb_readwrite_nonfbo(
       bitmap->locked_region.format = format;
       bitmap->locked_region.pitch = -pitch;
       bitmap->locked_region.pixel_size = pixel_size;
+      bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(format);
    }
 
    return ok;
@@ -444,6 +426,7 @@ static bool ogl_lock_region_compressed_readwrite (
       bitmap->locked_region.format = format;
       bitmap->locked_region.pitch = -pitch;
       bitmap->locked_region.pixel_size = pixel_size;
+      bitmap->locked_region.pixel_size_bits = pixel_size_bits;
    }
 
    return ok;
@@ -512,7 +495,7 @@ static void ogl_unlock_region_non_readonly(ALLEGRO_BITMAP *bitmap,
    glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
    {
       const int lock_pixel_size = al_get_pixel_size(lock_format);
-      const int pixel_alignment = ogl_pixel_alignment(lock_pixel_size,
+      const int pixel_alignment = _al_ogl_pixel_alignment(lock_pixel_size,
          _al_pixel_format_is_compressed(lock_format));
       glPixelStorei(GL_UNPACK_ALIGNMENT, pixel_alignment);
       e = glGetError();

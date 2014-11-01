@@ -26,6 +26,7 @@ struct ALLEGRO_LOCKED_REGION {
    int format;
    int pitch;
    int pixel_size;
+   int pixel_size_bits;
 };
 
 

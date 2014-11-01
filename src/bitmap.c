@@ -48,7 +48,7 @@ static ALLEGRO_BITMAP *create_memory_bitmap(ALLEGRO_DISPLAY *current_display,
 
    bitmap = al_calloc(1, sizeof *bitmap);
 
-   pitch = w * al_get_pixel_size(format);
+   pitch = w * al_get_pixel_size_bits(format) / 8;
 
    bitmap->vt = NULL;
    bitmap->_format = format;
@@ -150,7 +150,7 @@ ALLEGRO_BITMAP *_al_create_bitmap_params(ALLEGRO_DISPLAY *current_display,
     * appropriate; video bitmaps may leave it NULL.
     */
 
-   ASSERT(bitmap->pitch >= w * al_get_pixel_size(bitmap->_format));
+   ASSERT(bitmap->pitch >= w * al_get_pixel_size_bits(bitmap->_format) / 8);
    result = bitmap->vt->upload_bitmap(bitmap);
 
    if (!result) {
@@ -489,10 +489,10 @@ void _al_convert_bitmap_data(
    /* Use memcpy if no conversion is needed. */
    if (src_format == dst_format) {
       int y;
-      int size = al_get_pixel_size(src_format);
-      const char *src_ptr = ((const char *)src) + sy * src_pitch + sx * size;
-      char *dst_ptr = ((char *)dst) + dy * dst_pitch + dx * size;
-      width *= size;
+      int size_bits = al_get_pixel_size_bits(src_format);
+      const char *src_ptr = ((const char *)src) + sy * src_pitch + sx * size_bits / 8;
+      char *dst_ptr = ((char *)dst) + dy * dst_pitch + dx * size_bits / 8;
+      width = width * size_bits / 8;
       for (y = 0; y < height; y++) {
          memcpy(dst_ptr, src_ptr, width);
          src_ptr += src_pitch;

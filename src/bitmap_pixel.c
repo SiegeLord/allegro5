@@ -28,7 +28,7 @@ ALLEGRO_COLOR al_get_pixel(ALLEGRO_BITMAP *bitmap, int x, int y)
 {
    ALLEGRO_LOCKED_REGION *lr;
    char *data;
-   ALLEGRO_COLOR color;
+   ALLEGRO_COLOR color = al_map_rgba_f(0, 0, 0, 0);
    int bitmap_format = al_get_bitmap_format(bitmap);
 
    if (bitmap->parent) {
@@ -38,38 +38,46 @@ ALLEGRO_COLOR al_get_pixel(ALLEGRO_BITMAP *bitmap, int x, int y)
    }
 
    if (bitmap->locked) {
+      if (_al_pixel_format_is_compressed(bitmap->locked_region.format)) {
+         ALLEGRO_ERROR("Bitmap lock format impossible to read from.");
+         return color;
+      }
       x -= bitmap->lock_x;
       y -= bitmap->lock_y;
       if (x < 0 || y < 0 || x >= bitmap->lock_w || y >= bitmap->lock_h) {
          ALLEGRO_ERROR("Out of bounds.");
-         memset(&color, 0, sizeof(ALLEGRO_COLOR));
          return color;
       }
 
       data = bitmap->locked_region.data;
       data += y * bitmap->locked_region.pitch;
-      data += x * al_get_pixel_size(bitmap->locked_region.format);
+      data += x * al_get_pixel_size_bits(bitmap->locked_region.format) / 8;
 
       _AL_INLINE_GET_PIXEL(bitmap->locked_region.format, data, color, false);
    }
    else {
+      int lock_format = bitmap_format;
+      /* Impossible to decompress in software,
+       * so we let the hardware perform the conversion. */
+      if (_al_pixel_format_is_compressed(bitmap_format)) {
+         /* XXX arbitrary format */
+         lock_format = ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE;
+      }
       /* FIXME: must use clip not full bitmap */
       if (x < 0 || y < 0 || x >= bitmap->w || y >= bitmap->h) {
-         memset(&color, 0, sizeof(ALLEGRO_COLOR));
          return color;
       }
 
-      if (!(lr = al_lock_bitmap_region(bitmap, x, y, 1, 1, bitmap_format,
+      if (!(lr = al_lock_bitmap_region(bitmap, x, y, 1, 1, lock_format,
             ALLEGRO_LOCK_READONLY)))
       {
-         memset(&color, 0, sizeof(ALLEGRO_COLOR));
          return color;
       }
 
       /* FIXME: check for valid pixel format */
 
       data = lr->data;
-      _AL_INLINE_GET_PIXEL(bitmap_format, data, color, false);
+      _AL_INLINE_GET_PIXEL(lock_format, data, color, false);
 
       al_unlock_bitmap(bitmap);
    }
@@ -97,6 +105,10 @@ void _al_put_pixel(ALLEGRO_BITMAP *bitmap, int x, int y, ALLEGRO_COLOR color)
    }
 
    if (bitmap->locked) {
+      if (_al_pixel_format_is_compressed(bitmap->locked_region.format)) {
+         ALLEGRO_ERROR("Bitmap lock format impossible to write to.");
+         return color;
+      }
       x -= bitmap->lock_x;
       y -= bitmap->lock_y;
       if (x < 0 || y < 0 || x >= bitmap->lock_w || y >= bitmap->lock_h) {
@@ -105,12 +117,19 @@ void _al_put_pixel(ALLEGRO_BITMAP *bitmap, int x, int y, ALLEGRO_COLOR color)
 
       data = bitmap->locked_region.data;
       data += y * bitmap->locked_region.pitch;
-      data += x * al_get_pixel_size(bitmap->locked_region.format);
+      data += x * al_get_pixel_size_bits(bitmap->locked_region.format) / 8;
 
       _AL_INLINE_PUT_PIXEL(bitmap->locked_region.format, data, color, false);
    }
    else {
-      lr = al_lock_bitmap_region(bitmap, x, y, 1, 1, bitmap_format,
+      int lock_format = bitmap_format;
+      /* Impossible to compress in software,
+       * so we let the hardware perform the conversion. */
+      if (_al_pixel_format_is_compressed(bitmap_format)) {
+         /* XXX arbitrary format */
+         lock_format = ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE;
+      }
+      lr = al_lock_bitmap_region(bitmap, x, y, 1, 1, lock_format,
          ALLEGRO_LOCK_WRITEONLY);
       if (!lr)
          return;
@@ -118,7 +137,7 @@ void _al_put_pixel(ALLEGRO_BITMAP *bitmap, int x, int y, ALLEGRO_COLOR color)
       /* FIXME: check for valid pixel format */
 
       data = lr->data;
-      _AL_INLINE_PUT_PIXEL(bitmap_format, data, color, false);
+      _AL_INLINE_PUT_PIXEL(lock_format, data, color, false);
 
       al_unlock_bitmap(bitmap);
    }
