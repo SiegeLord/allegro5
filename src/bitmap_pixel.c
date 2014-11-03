@@ -107,7 +107,7 @@ void _al_put_pixel(ALLEGRO_BITMAP *bitmap, int x, int y, ALLEGRO_COLOR color)
    if (bitmap->locked) {
       if (_al_pixel_format_is_compressed(bitmap->locked_region.format)) {
          ALLEGRO_ERROR("Bitmap lock format impossible to write to.");
-         return color;
+         return;
       }
       x -= bitmap->lock_x;
       y -= bitmap->lock_y;

@@ -529,7 +529,7 @@ static bool ogl_upload_bitmap(ALLEGRO_BITMAP *bitmap)
       buf = al_calloc(1,
          pix_size_bits * ogl_bitmap->true_h * ogl_bitmap->true_w / 8);
       glPixelStorei(GL_UNPACK_ALIGNMENT, _al_ogl_pixel_alignment(
-         pix_size_bits / 8, compressed);
+         pix_size_bits / 8, compressed));
       glTexImage2D(GL_TEXTURE_2D, 0, get_glformat(bitmap_format, 0),
          ogl_bitmap->true_w, ogl_bitmap->true_h, 0,
          get_glformat(bitmap_format, 2),
@@ -757,9 +757,9 @@ void _al_ogl_upload_bitmap_memory(ALLEGRO_BITMAP *bitmap, int format, void *ptr)
    src = ((uint8_t *)ptr) + (pixsize_bits * w * (h-1) / 8);
 
    for (y = 0; y < h; y++) {
-      memcpy(dst, src, pixsize * w / 8);
+      memcpy(dst, src, pixsize_bits * w / 8);
       dst += lr->pitch;
-      src -= pixsize * w / 8; // minus because it's flipped
+      src -= pixsize_bits * w / 8; // minus because it's flipped
    }
 
    al_unlock_bitmap(tmp);

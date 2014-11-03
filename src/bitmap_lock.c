@@ -41,7 +41,7 @@ ALLEGRO_LOCKED_REGION *al_lock_bitmap_region(ALLEGRO_BITMAP *bitmap,
    }
 
    if (_al_pixel_format_is_compressed(format) &&
-         !_al_pixel_format_is_compressed(bitmap_format) {
+         !_al_pixel_format_is_compressed(bitmap_format)) {
       /* It's not possible to compress bitmaps this way at this time. */
       return NULL;
    }

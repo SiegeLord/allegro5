@@ -219,8 +219,8 @@ static bool ogl_lock_region_nonbb_writeonly(
    bitmap->locked_region.data = ogl_bitmap->lock_buffer + pitch * (h - 1);
    bitmap->locked_region.format = format;
    bitmap->locked_region.pitch = -pitch;
-   bitmap->locked_region.pixel_size = pixel_size;
-   bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(format);
+   bitmap->locked_region.pixel_size = al_get_pixel_size(format);
+   bitmap->locked_region.pixel_size_bits = pixel_size_bits;
    return true;
 }
 
@@ -425,7 +425,7 @@ static bool ogl_lock_region_compressed_readwrite (
          pitch * (gl_y + h - 1) + pixel_size_bits * x / 8;
       bitmap->locked_region.format = format;
       bitmap->locked_region.pitch = -pitch;
-      bitmap->locked_region.pixel_size = pixel_size;
+      bitmap->locked_region.pixel_size = al_get_pixel_size(format);
       bitmap->locked_region.pixel_size_bits = pixel_size_bits;
    }
 
