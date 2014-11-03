@@ -37,6 +37,25 @@ ALLEGRO_DEBUG_CHANNEL("opengl")
  * Helpers - duplicates code in ogl_bitmap.c for now
  */
 
+static int ogl_pixel_alignment(int pixel_size)
+{
+   /* Valid alignments are: 1, 2, 4, 8 bytes. */
+   switch (pixel_size) {
+      case 1:
+      case 2:
+      case 4:
+      case 8:
+         return pixel_size;
+      case 3:
+         return 1;
+      case 16: /* float32 */
+         return 4;
+      default:
+         ASSERT(false);
+         return 4;
+   }
+}
+
 static int ogl_pitch(int w, int pixel_size)
 {
    int pitch = w * pixel_size;
@@ -68,9 +87,6 @@ static bool ogl_lock_region_nonbb_readwrite_fbo(
    ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap,
    int x, int gl_y, int w, int h, int format);
 static bool ogl_lock_region_nonbb_readwrite_nonfbo(
-   ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap,
-   int x, int gl_y, int w, int h, int format);
-static bool ogl_lock_region_compressed_readwrite (
    ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap,
    int x, int gl_y, int w, int h, int format);
 
@@ -120,8 +136,7 @@ ALLEGRO_LOCKED_REGION *_al_ogl_lock_region_new(ALLEGRO_BITMAP *bitmap,
    glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
    {
       const int pixel_size = al_get_pixel_size(format);
-      const int pixel_alignment = _al_ogl_pixel_alignment(pixel_size,
-         _al_pixel_format_is_compressed(format));
+      const int pixel_alignment = ogl_pixel_alignment(pixel_size);
       glPixelStorei(GL_PACK_ALIGNMENT, pixel_alignment);
       e = glGetError();
       if (e) {
@@ -197,7 +212,6 @@ static bool ogl_lock_region_backbuffer(
    bitmap->locked_region.format = format;
    bitmap->locked_region.pitch = -pitch;
    bitmap->locked_region.pixel_size = pixel_size;
-   bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(format);
    return true;
 }
 
@@ -206,8 +220,8 @@ static bool ogl_lock_region_nonbb_writeonly(
    ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap,
    int x, int gl_y, int w, int h, int format)
 {
-   const int pixel_size_bits = al_get_pixel_size_bits(format);
-   const int pitch = w * pixel_size_bits / 8;
+   const int pixel_size = al_get_pixel_size(format);
+   const int pitch = ogl_pitch(w, pixel_size);
    (void) x;
    (void) gl_y;
 
@@ -219,8 +233,7 @@ static bool ogl_lock_region_nonbb_writeonly(
    bitmap->locked_region.data = ogl_bitmap->lock_buffer + pitch * (h - 1);
    bitmap->locked_region.format = format;
    bitmap->locked_region.pitch = -pitch;
-   bitmap->locked_region.pixel_size = al_get_pixel_size(format);
-   bitmap->locked_region.pixel_size_bits = pixel_size_bits;
+   bitmap->locked_region.pixel_size = pixel_size;
    return true;
 }
 
@@ -232,21 +245,10 @@ static bool ogl_lock_region_nonbb_readwrite(
    ALLEGRO_BITMAP *old_target;
    bool fbo_was_set;
    bool ok;
-   int bitmap_format = al_get_bitmap_format(bitmap);
 
    ASSERT(bitmap->parent == NULL);
    ASSERT(bitmap->locked == false);
    ASSERT(_al_get_bitmap_display(bitmap) == al_get_current_display());
-
-   if (_al_pixel_format_is_compressed(bitmap_format)
-         && _al_pixel_format_is_compressed(format)) {
-      if (bitmap_format != format) {
-         /* If both are compressed, we only support the same format */
-         return false;
-      }
-      ok = ogl_lock_region_compressed_readwrite(bitmap, ogl_bitmap, x, gl_y,
-         w, h, format);
-   }
 
    /* Try to create an FBO if there isn't one. */
    old_target = al_get_target_bitmap();
@@ -339,7 +341,6 @@ static bool ogl_lock_region_nonbb_readwrite_fbo(
       bitmap->locked_region.format = format;
       bitmap->locked_region.pitch = -pitch;
       bitmap->locked_region.pixel_size = pixel_size;
-      bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(format);
       return true;
    }
 
@@ -388,49 +389,12 @@ static bool ogl_lock_region_nonbb_readwrite_nonfbo(
       bitmap->locked_region.format = format;
       bitmap->locked_region.pitch = -pitch;
       bitmap->locked_region.pixel_size = pixel_size;
-      bitmap->locked_region.pixel_size_bits = al_get_pixel_size_bits(format);
    }
 
    return ok;
 }
 
-static bool ogl_lock_region_compressed_readwrite (
-   ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap,
-   int x, int gl_y, int w, int h, int format)
-{
-   const int pixel_size_bits = al_get_pixel_size_bits(format);
-   const int pitch = ogl_bitmap->true_w * pixel_size_bits / 8;
-   GLenum e;
-   bool ok;
-   (void) w;
 
-   ogl_bitmap->lock_buffer = al_malloc(pitch * ogl_bitmap->true_h);
-   if (ogl_bitmap->lock_buffer == NULL) {
-      return false;
-   }
-   glBindTexture(GL_TEXTURE_2D, ogl_bitmap->texture);
-   glGetCompressedTexImage(GL_TEXTURE_2D, 0, ogl_bitmap->lock_buffer);
-   
-   e = glGetError();
-   if (e) {
-      ALLEGRO_ERROR("glGetCompressedTexImage for format %s failed (%s).\n",
-         _al_pixel_format_name(format), _al_gl_error_string(e));
-      al_free(ogl_bitmap->lock_buffer);
-      ogl_bitmap->lock_buffer = NULL;
-      ok = false;
-   }
-
-   if (ok) {
-      bitmap->locked_region.data = ogl_bitmap->lock_buffer +
-         pitch * (gl_y + h - 1) + pixel_size_bits * x / 8;
-      bitmap->locked_region.format = format;
-      bitmap->locked_region.pitch = -pitch;
-      bitmap->locked_region.pixel_size = al_get_pixel_size(format);
-      bitmap->locked_region.pixel_size_bits = pixel_size_bits;
-   }
-
-   return ok;
-}
 
 /*
  * Unlocking
@@ -447,8 +411,6 @@ static void ogl_unlock_region_nonbb_fbo_writeonly(ALLEGRO_BITMAP *bitmap,
 static void ogl_unlock_region_nonbb_fbo_readwrite(ALLEGRO_BITMAP *bitmap,
    ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap, int gl_y);
 static void ogl_unlock_region_nonbb_nonfbo(ALLEGRO_BITMAP *bitmap,
-   ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap, int gl_y);
-static void ogl_unlock_region_compressed_readwrite (ALLEGRO_BITMAP *bitmap,
    ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap, int gl_y);
 
 
@@ -495,8 +457,7 @@ static void ogl_unlock_region_non_readonly(ALLEGRO_BITMAP *bitmap,
    glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
    {
       const int lock_pixel_size = al_get_pixel_size(lock_format);
-      const int pixel_alignment = _al_ogl_pixel_alignment(lock_pixel_size,
-         _al_pixel_format_is_compressed(lock_format));
+      const int pixel_alignment = ogl_pixel_alignment(lock_pixel_size);
       glPixelStorei(GL_UNPACK_ALIGNMENT, pixel_alignment);
       e = glGetError();
       if (e) {
@@ -521,10 +482,6 @@ static void ogl_unlock_region_non_readonly(ALLEGRO_BITMAP *bitmap,
       if (ogl_bitmap->fbo_info) {
          ALLEGRO_DEBUG("Unlocking non-backbuffer (FBO)\n");
          ogl_unlock_region_nonbb_fbo(bitmap, ogl_bitmap, gl_y, orig_format);
-      }
-      else if (_al_pixel_format_is_compressed(orig_format) &&
-               _al_pixel_format_is_compressed(lock_format)) {
-         ogl_unlock_region_compressed_readwrite(bitmap, ogl_bitmap, gl_y);
       }
       else {
          ALLEGRO_DEBUG("Unlocking non-backbuffer (non-FBO)\n");
@@ -721,41 +678,6 @@ static void ogl_unlock_region_nonbb_nonfbo(ALLEGRO_BITMAP *bitmap,
    e = glGetError();
    if (e) {
       ALLEGRO_ERROR("glTexSubImage2D for format %s failed (%s).\n",
-         _al_pixel_format_name(lock_format), _al_gl_error_string(e));
-   }
-}
-
-
-static void ogl_unlock_region_compressed_readwrite (ALLEGRO_BITMAP *bitmap,
-   ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap, int gl_y)
-{
-   const int lock_format = bitmap->locked_region.format;
-   const int data_size = bitmap->lock_h * ogl_bitmap->true_w
-      * al_get_pixel_size_bits(lock_format) / 8;
-   unsigned char *start_ptr;
-   GLenum e;
-
-   if (bitmap->lock_flags & ALLEGRO_LOCK_WRITEONLY) {
-      ALLEGRO_DEBUG("Unlocking compressed WRITEONLY\n");
-      start_ptr = ogl_bitmap->lock_buffer;
-   }
-   else {
-      ALLEGRO_DEBUG("Unlocking compressed READWRITE\n");
-      glPixelStorei(GL_UNPACK_ROW_LENGTH, ogl_bitmap->true_w);
-      start_ptr = (unsigned char *)bitmap->locked_region.data
-            + (bitmap->lock_h - 1) * bitmap->locked_region.pitch;
-   }
-
-   glCompressedTexSubImage2D(GL_TEXTURE_2D, 0,
-      bitmap->lock_x, gl_y,
-      bitmap->lock_w, bitmap->lock_h,
-      get_glformat(lock_format, 0),
-      data_size,
-      start_ptr);
-
-   e = glGetError();
-   if (e) {
-      ALLEGRO_ERROR("glCompressedTexSubImage2D for format %s failed (%s).\n",
          _al_pixel_format_name(lock_format), _al_gl_error_string(e));
    }
 }

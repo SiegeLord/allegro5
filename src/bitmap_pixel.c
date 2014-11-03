@@ -38,10 +38,6 @@ ALLEGRO_COLOR al_get_pixel(ALLEGRO_BITMAP *bitmap, int x, int y)
    }
 
    if (bitmap->locked) {
-      if (_al_pixel_format_is_compressed(bitmap->locked_region.format)) {
-         ALLEGRO_ERROR("Bitmap lock format impossible to read from.");
-         return color;
-      }
       x -= bitmap->lock_x;
       y -= bitmap->lock_y;
       if (x < 0 || y < 0 || x >= bitmap->lock_w || y >= bitmap->lock_h) {
@@ -51,7 +47,7 @@ ALLEGRO_COLOR al_get_pixel(ALLEGRO_BITMAP *bitmap, int x, int y)
 
       data = bitmap->locked_region.data;
       data += y * bitmap->locked_region.pitch;
-      data += x * al_get_pixel_size_bits(bitmap->locked_region.format) / 8;
+      data += x * al_get_pixel_size(bitmap->locked_region.format);
 
       _AL_INLINE_GET_PIXEL(bitmap->locked_region.format, data, color, false);
    }
@@ -105,10 +101,6 @@ void _al_put_pixel(ALLEGRO_BITMAP *bitmap, int x, int y, ALLEGRO_COLOR color)
    }
 
    if (bitmap->locked) {
-      if (_al_pixel_format_is_compressed(bitmap->locked_region.format)) {
-         ALLEGRO_ERROR("Bitmap lock format impossible to write to.");
-         return;
-      }
       x -= bitmap->lock_x;
       y -= bitmap->lock_y;
       if (x < 0 || y < 0 || x >= bitmap->lock_w || y >= bitmap->lock_h) {
@@ -117,7 +109,7 @@ void _al_put_pixel(ALLEGRO_BITMAP *bitmap, int x, int y, ALLEGRO_COLOR color)
 
       data = bitmap->locked_region.data;
       data += y * bitmap->locked_region.pitch;
-      data += x * al_get_pixel_size_bits(bitmap->locked_region.format) / 8;
+      data += x * al_get_pixel_size(bitmap->locked_region.format);
 
       _AL_INLINE_PUT_PIXEL(bitmap->locked_region.format, data, color, false);
    }

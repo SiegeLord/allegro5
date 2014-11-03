@@ -8,6 +8,8 @@
 
 typedef struct BITMAP_TYPE {
     ALLEGRO_BITMAP* bmp;
+    ALLEGRO_BITMAP* clone;
+    ALLEGRO_BITMAP* decomp;
     ALLEGRO_PIXEL_FORMAT format;
     const char* name;
 } BITMAP_TYPE;
@@ -21,17 +23,15 @@ int main(int argc, char **argv)
    ALLEGRO_FONT *font;
    ALLEGRO_BITMAP *bkg;
    bool redraw = true;
-   int w;
    int ii;
-   double t0, t1;
    int cur_bitmap = 0;
    #define NUM_BITMAPS 5
    BITMAP_TYPE bitmaps[NUM_BITMAPS] = {
-      {NULL, ALLEGRO_PIXEL_FORMAT_RGB_DXT1, "DXT1 (no alpha)"},
-      {NULL, ALLEGRO_PIXEL_FORMAT_ANY,       "Uncompressed"},
-      {NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT1, "DXT1"},
-      {NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT3, "DXT3"},
-      {NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT5, "DXT5"},
+      {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_RGB_DXT1,  "DXT1 (no alpha)"},
+      {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_ANY,       "Uncompressed"},
+      {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT1, "DXT1"},
+      {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT3, "DXT3"},
+      {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT5, "DXT5"},
    };
 
    if (argc > 1) {
@@ -61,6 +61,7 @@ int main(int argc, char **argv)
    }
 
    for (ii = 0; ii < NUM_BITMAPS; ii++) {
+      double t0, t1;
       al_set_new_bitmap_format(bitmaps[ii].format);
       
       t0 = al_get_time();
@@ -71,14 +72,31 @@ int main(int argc, char **argv)
          abort_example("%s not found or failed to load\n", filename);
       }
       log_printf("%s load time: %f sec\n", bitmaps[ii].name, t1 - t0);
+
+      t0 = al_get_time();
+      bitmaps[ii].clone = al_clone_bitmap(bitmaps[ii].bmp);
+      t1 = al_get_time();
+
+      if (!bitmaps[ii].clone) {
+         abort_example("Couldn't clone %s\n", bitmaps[ii].name);
+      }
+      log_printf("%s clone time: %f sec\n", bitmaps[ii].name, t1 - t0);
+
+      al_set_new_bitmap_format(ALLEGRO_PIXEL_FORMAT_ANY);
+      t0 = al_get_time();
+      bitmaps[ii].decomp = al_clone_bitmap(bitmaps[ii].bmp);
+      t1 = al_get_time();
+
+      if (!bitmaps[ii].decomp) {
+         abort_example("Couldn't decompress %s\n", bitmaps[ii].name);
+      }
+      log_printf("%s decompress time: %f sec\n", bitmaps[ii].name, t1 - t0);
    }
 
    bkg = al_load_bitmap("data/bkg.png");
    if (!bkg) {
       abort_example("data/bkg.png not found or failed to load\n");
    }
-
-   w = al_get_bitmap_width(bitmaps[0].bmp) + 5;
 
    al_set_new_bitmap_format(ALLEGRO_PIXEL_FORMAT_ANY);
    font = al_create_builtin_font();
@@ -117,6 +135,8 @@ int main(int argc, char **argv)
          al_draw_bitmap(bkg, 0, 0, 0);
          al_draw_textf(font, al_map_rgb_f(1, 1, 1), 5, 5, ALLEGRO_ALIGN_LEFT, "Format: %s", bitmaps[cur_bitmap].name);
          al_draw_bitmap(bitmaps[cur_bitmap].bmp, 0, 20, 0);
+         al_draw_bitmap(bitmaps[cur_bitmap].clone, al_get_bitmap_width(bitmaps[cur_bitmap].bmp), 20, 0);
+         al_draw_bitmap(bitmaps[cur_bitmap].decomp, 0, 20 + al_get_bitmap_height(bitmaps[cur_bitmap].bmp), 0);
          al_flip_display();
       }
    }

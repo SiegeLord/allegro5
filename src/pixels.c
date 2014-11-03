@@ -57,10 +57,10 @@ static int pixel_sizes[] = {
    4, /* ALLEGRO_PIXEL_FORMAT_ABGR_LE */
    2, /* ALLEGRO_PIXEL_FORMAT_RGBA_4444 */
    1, /* ALLEGRO_PIXEL_FORMAT_SINGLE_CHANNEL_8 */
-   0, /* XXX: actually 1/2 */
-   1,
-   1,
-   0, /* XXX: actually 1/2 */
+   0,
+   0,
+   0,
+   0,
 };
 
 static int pixel_bits[] = {
@@ -92,10 +92,10 @@ static int pixel_bits[] = {
    32, /* ALLEGRO_PIXEL_FORMAT_ABGR_LE */
    16, /* ALLEGRO_PIXEL_FORMAT_RGBA_4444 */
    8, /* ALLEGRO_PIXEL_FORMAT_SINGLE_CHANNEL_8 */
-   4,
-   8,
-   8,
-   4,
+   0,
+   0,
+   0,
+   0,
 };
 
 static bool format_alpha_table[ALLEGRO_NUM_PIXEL_FORMATS] = {
@@ -277,18 +277,6 @@ static bool format_is_compressed[ALLEGRO_NUM_PIXEL_FORMATS] =
    true,
 };
 
-/* Function: al_get_pixel_size_bits
- */
-int al_get_pixel_size_bits(int format)
-{
-   switch (format) {
-      case ALLEGRO_PIXEL_FORMAT_RGBA_DXT1:
-      case ALLEGRO_PIXEL_FORMAT_RGB_DXT1:
-         return 4;
-      default:
-         return al_get_pixel_size(format) * 8;
-   }
-}
 
 void _al_init_pixels(void)
 {

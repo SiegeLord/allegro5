@@ -48,7 +48,7 @@ static ALLEGRO_BITMAP *create_memory_bitmap(ALLEGRO_DISPLAY *current_display,
 
    bitmap = al_calloc(1, sizeof *bitmap);
 
-   pitch = w * al_get_pixel_size_bits(format) / 8;
+   pitch = w * al_get_pixel_size(format);
 
    bitmap->vt = NULL;
    bitmap->_format = format;
@@ -150,7 +150,7 @@ ALLEGRO_BITMAP *_al_create_bitmap_params(ALLEGRO_DISPLAY *current_display,
     * appropriate; video bitmaps may leave it NULL.
     */
 
-   ASSERT(bitmap->pitch >= w * al_get_pixel_size_bits(bitmap->_format) / 8);
+   ASSERT(bitmap->pitch >= w * al_get_pixel_size(bitmap->_format));
    result = bitmap->vt->upload_bitmap(bitmap);
 
    if (!result) {
@@ -451,17 +451,31 @@ ALLEGRO_BITMAP *al_get_parent_bitmap(ALLEGRO_BITMAP *bitmap)
 }
 
 
-static void transfer_bitmap_data(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst)
+static bool transfer_bitmap_data(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst)
 {
    ALLEGRO_LOCKED_REGION *dst_region;
    ALLEGRO_LOCKED_REGION *src_region;
+   int src_format = al_get_bitmap_format(src);
+   int dst_format = al_get_bitmap_format(dst);
+   bool src_compressed = _al_pixel_format_is_compressed(src_format);
+   bool dst_compressed = _al_pixel_format_is_compressed(dst_format);
+   int lock_format = ALLEGRO_PIXEL_FORMAT_ANY;
 
-   if (!(src_region = al_lock_bitmap(src, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_READONLY)))
-      return;
+   /* Go through a non-compressed intermediate */
+   if (src_compressed && !dst_compressed) {
+      lock_format = dst_format;
+   }
+   else if (!src_compressed && dst_compressed) {
+      lock_format = src_format;
+   }
 
-   if (!(dst_region = al_lock_bitmap(dst, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY))) {
+   /* Perform the conversion here, rather than with the dst_lock, because while it may be */
+   if (!(src_region = al_lock_bitmap(src, lock_format, ALLEGRO_LOCK_READONLY)))
+      return false;
+
+   if (!(dst_region = al_lock_bitmap(dst, lock_format, ALLEGRO_LOCK_WRITEONLY))) {
       al_unlock_bitmap(src);
-      return;
+      return false;
    }
 
    _al_convert_bitmap_data(
@@ -471,6 +485,8 @@ static void transfer_bitmap_data(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst)
 
    al_unlock_bitmap(src);
    al_unlock_bitmap(dst);
+
+   return true;
 }
 
 
@@ -482,17 +498,14 @@ void _al_convert_bitmap_data(
    ASSERT(src);
    ASSERT(dst);
    ASSERT(_al_pixel_format_is_real(dst_format));
-   /* Video-only formats don't have conversion functions */
-   ASSERT(!_al_pixel_format_is_video_only(src_format));
-   ASSERT(!_al_pixel_format_is_video_only(dst_format));
 
    /* Use memcpy if no conversion is needed. */
    if (src_format == dst_format) {
       int y;
-      int size_bits = al_get_pixel_size_bits(src_format);
-      const char *src_ptr = ((const char *)src) + sy * src_pitch + sx * size_bits / 8;
-      char *dst_ptr = ((char *)dst) + dy * dst_pitch + dx * size_bits / 8;
-      width = width * size_bits / 8;
+      int size = al_get_pixel_size(src_format);
+      const char *src_ptr = ((const char *)src) + sy * src_pitch + sx * size;
+      char *dst_ptr = ((char *)dst) + dy * dst_pitch + dx * size;
+      width = width * size;
       for (y = 0; y < height; y++) {
          memcpy(dst_ptr, src_ptr, width);
          src_ptr += src_pitch;
@@ -500,6 +513,11 @@ void _al_convert_bitmap_data(
       }
       return;
    }
+
+   /* Video-only formats don't have conversion functions, so they should have
+    * been taken care of before reaching this location. */
+   ASSERT(!_al_pixel_format_is_video_only(src_format));
+   ASSERT(!_al_pixel_format_is_video_only(dst_format));
 
    (_al_convert_funcs[src_format][dst_format])(src, src_pitch,
       dst, dst_pitch, sx, sy, dx, dy, width, height);
@@ -516,7 +534,10 @@ ALLEGRO_BITMAP *al_clone_bitmap(ALLEGRO_BITMAP *bitmap)
    clone = al_create_bitmap(bitmap->w, bitmap->h);
    if (!clone)
       return NULL;
-   transfer_bitmap_data(bitmap, clone);
+   if (!transfer_bitmap_data(bitmap, clone)) {
+      al_destroy_bitmap(clone);
+      return NULL;
+   }
    return clone;
 }
 

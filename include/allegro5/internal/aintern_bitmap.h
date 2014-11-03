@@ -80,6 +80,8 @@ struct ALLEGRO_BITMAP
 
    /* A memory copy of the bitmap data. May be NULL for an empty bitmap. */
    unsigned char *memory;
+   /* What format is used for memory field above */
+   int memory_format;
 
    /* Extra data for display bitmaps, like texture id and so on. */
    void *extra;
