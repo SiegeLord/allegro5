@@ -2437,7 +2437,6 @@ static ALLEGRO_BITMAP *d3d_create_bitmap(ALLEGRO_DISPLAY *d,
    extra->system_texture = 0;
    extra->initialized = false;
    extra->is_backbuffer = false;
-   extra->video_is_managed = _al_pixel_format_is_compressed(format);
    extra->render_target = NULL;
 
    extra->display = (ALLEGRO_DISPLAY_D3D *)d;
