@@ -682,9 +682,9 @@ ALLEGRO_BITMAP *_al_ogl_create_bitmap(ALLEGRO_DISPLAY *d, int w, int h,
    extra = bitmap->extra;
 
    bitmap->vt = ogl_bitmap_driver();
-   bitmap->memory_format = 
+   bitmap->_memory_format = 
       _al_pixel_format_is_compressed(format) ? ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE : format;
-   bitmap->pitch = true_w * al_get_pixel_size(bitmap->memory_format);
+   bitmap->pitch = true_w * al_get_pixel_size(bitmap->_memory_format);
    bitmap->_format = format;
    bitmap->_flags = flags | _ALLEGRO_INTERNAL_OPENGL;
 
@@ -692,7 +692,7 @@ ALLEGRO_BITMAP *_al_ogl_create_bitmap(ALLEGRO_DISPLAY *d, int w, int h,
    extra->true_h = true_h;
 
    if (!(flags & ALLEGRO_NO_PRESERVE_TEXTURE)) {
-      bitmap->memory = al_calloc(1, al_get_pixel_size(bitmap->memory_format)*w*h);
+      bitmap->memory = al_calloc(1, al_get_pixel_size(bitmap->_memory_format)*w*h);
    }
 
    return bitmap;
@@ -868,7 +868,7 @@ void _al_opengl_backup_dirty_bitmaps(ALLEGRO_DISPLAY *d, bool flip)
       ALLEGRO_DEBUG("Backing up dirty bitmap %p\n", b);
       lr = al_lock_bitmap(
          b,
-         b->memory_format,
+         _al_get_bitmap_memory_format(b),
          ALLEGRO_LOCK_READONLY
       );
       if (lr) {

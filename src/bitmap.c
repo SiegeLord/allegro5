@@ -303,6 +303,15 @@ int al_get_bitmap_format(ALLEGRO_BITMAP *bitmap)
 }
 
 
+int _al_get_bitmap_memory_format(ALLEGRO_BITMAP *bitmap)
+{
+   if (bitmap->parent)
+      return bitmap->parent->_memory_format;
+   else
+      return bitmap->_memory_format;
+}
+
+
 
 /* Function: al_get_bitmap_flags
  */

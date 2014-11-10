@@ -58,6 +58,7 @@ typedef HRESULT (WINAPI *D3DXCREATEEFFECTPROC)(LPDIRECT3DDEVICE9, LPCVOID, UINT,
 
 static HMODULE _imp_d3dx9_module = 0;
 static D3DXCREATEEFFECTPROC _imp_D3DXCreateEffect = NULL;
+_ALLEGRO_D3DXLSFLSPROC _al_imp_D3DXLoadSurfaceFromSurface = NULL;
 
 
 static const char *null_source = "";
@@ -121,6 +122,14 @@ static bool _imp_load_d3dx9_module_version(int version)
 
    _imp_D3DXCreateEffect = (D3DXCREATEEFFECTPROC)GetProcAddress(_imp_d3dx9_module, "D3DXCreateEffect");
    if (NULL == _imp_D3DXCreateEffect) {
+      FreeLibrary(_imp_d3dx9_module);
+      _imp_d3dx9_module = NULL;
+      return false;
+   }
+
+   _al_imp_D3DXLoadSurfaceFromSurface =
+      (_ALLEGRO_D3DXLSFLSPROC)GetProcAddress(_imp_d3dx9_module, "D3DXLoadSurfaceFromSurface");
+   if (NULL == _al_imp_D3DXLoadSurfaceFromSurface) {
       FreeLibrary(_imp_d3dx9_module);
       _imp_d3dx9_module = NULL;
       return false;

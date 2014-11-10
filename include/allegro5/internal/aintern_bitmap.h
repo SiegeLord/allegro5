@@ -26,6 +26,9 @@ struct ALLEGRO_BITMAP
    int _format;
    int _flags;
    ALLEGRO_DISPLAY *_display;
+   /* What format is used for the backing memory
+    * (can be different, for e.g. compressed bitmaps) */
+   int _memory_format;
 
    int w, h;
    /*
@@ -80,8 +83,6 @@ struct ALLEGRO_BITMAP
 
    /* A memory copy of the bitmap data. May be NULL for an empty bitmap. */
    unsigned char *memory;
-   /* What format is used for memory field above */
-   int memory_format;
 
    /* Extra data for display bitmaps, like texture id and so on. */
    void *extra;
@@ -147,6 +148,8 @@ void _al_put_pixel(ALLEGRO_BITMAP *bitmap, int x, int y, ALLEGRO_COLOR color);
 /* Bitmap I/O */
 void _al_init_iio_table(void);
 
+
+int _al_get_bitmap_memory_format(ALLEGRO_BITMAP *bitmap);
 
 #ifdef __cplusplus
 }

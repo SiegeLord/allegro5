@@ -89,6 +89,12 @@ void _al_d3d_update_render_state(ALLEGRO_DISPLAY *display);
       const ALLEGRO_TRANSFORM *t);
 #endif
 
+typedef HRESULT (WINAPI *_ALLEGRO_D3DXLSFLSPROC)(LPDIRECT3DSURFACE9, const PALETTEENTRY*,
+   const RECT*, LPDIRECT3DSURFACE9, const PALETTEENTRY*, const RECT*,
+   DWORD, D3DCOLOR);
+
+extern _ALLEGRO_D3DXLSFLSPROC _al_imp_D3DXLoadSurfaceFromSurface;
+
 
 #ifdef __cplusplus
 }
