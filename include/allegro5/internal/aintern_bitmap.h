@@ -135,6 +135,11 @@ void _al_convert_bitmap_data(
 	int sx, int sy, int dx, int dy,
 	int width, int height);
 
+void _al_copy_bitmap_data(
+   const void *src, int src_pitch, void *dst, int dst_pitch,
+   int sx, int sy, int dx, int dy, int width, int height,
+   int format);
+
 /* Bitmap type conversion */ 
 void _al_init_convert_bitmap_list(void);
 void _al_register_convert_bitmap(ALLEGRO_BITMAP *bitmap);

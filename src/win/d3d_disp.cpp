@@ -2404,16 +2404,19 @@ static ALLEGRO_BITMAP *d3d_create_bitmap(ALLEGRO_DISPLAY *d,
       return NULL;
    }
 
-   if (_al_pixel_format_is_compressed(format)) {
+   bool compressed = _al_pixel_format_is_compressed(format);
+   if (compressed) {
       if (!_al_d3d_render_to_texture_supported()) {
-         /* Not implemented */
+         /* Not implemented. XXX: Why not? */
          return NULL;
       }
       if (!_al_imp_D3DXLoadSurfaceFromSurface) {
-         /* Need this for loading to/from compressed textures */
+         /* Need this for locking compressed bitmaps */
          return NULL;
       }
    }
+   int block_width = al_get_pixel_block_width(format);
+   int block_size = al_get_pixel_block_size(format);
 
    ALLEGRO_INFO("Chose bitmap format %d\n", format);
 
@@ -2424,12 +2427,12 @@ static ALLEGRO_BITMAP *d3d_create_bitmap(ALLEGRO_DISPLAY *d,
    bitmap->vt = _al_bitmap_d3d_driver();
    bitmap->_format = format;
    bitmap->_flags = flags;
-   bitmap->_memory_format = 
-      _al_pixel_format_is_compressed(format) ? ALLEGRO_PIXEL_FORMAT_ARGB_8888 : format;
-   bitmap->pitch = w * al_get_pixel_size(bitmap->_memory_format);
    al_identity_transform(&bitmap->transform);
 
-   bitmap->memory = (unsigned char *)al_malloc(bitmap->pitch * h);
+   bitmap->pitch =
+      _al_get_least_multiple(w, block_width) / block_width * block_size;
+   bitmap->memory = (unsigned char *)al_malloc(
+      bitmap->pitch * _al_get_least_multiple(h, block_width) / block_width);
 
    extra = (ALLEGRO_BITMAP_EXTRA_D3D *)al_calloc(1, sizeof *extra);
    bitmap->extra = extra;
@@ -2438,6 +2441,7 @@ static ALLEGRO_BITMAP *d3d_create_bitmap(ALLEGRO_DISPLAY *d,
    extra->initialized = false;
    extra->is_backbuffer = false;
    extra->render_target = NULL;
+   extra->system_format = compressed ? ALLEGRO_PIXEL_FORMAT_ARGB_8888 : format;
 
    extra->display = (ALLEGRO_DISPLAY_D3D *)d;
 

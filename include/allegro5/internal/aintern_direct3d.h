@@ -18,6 +18,7 @@ typedef struct ALLEGRO_BITMAP_EXTRA_D3D
 
    LPDIRECT3DTEXTURE9 video_texture;
    LPDIRECT3DTEXTURE9 system_texture;
+   int system_format;
 
    bool initialized;
    bool is_backbuffer;

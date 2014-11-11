@@ -98,6 +98,76 @@ static int pixel_bits[] = {
    0,
 };
 
+static int pixel_block_widths[] = {
+   0, /* ALLEGRO_PIXEL_FORMAT_ANY */
+   0,
+   0,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1, /* ALLEGRO_PIXEL_FORMAT_ARGB_8888 */
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1, /* ALLEGRO_PIXEL_FORMAT_ABGR_F32 */
+   1, /* ALLEGRO_PIXEL_FORMAT_ABGR_LE */
+   1, /* ALLEGRO_PIXEL_FORMAT_RGBA_4444 */
+   1, /* ALLEGRO_PIXEL_FORMAT_SINGLE_CHANNEL_8 */
+   4,
+   4,
+   4,
+   4,
+};
+
+static int pixel_block_sizes[] = {
+   0,  /* ALLEGRO_PIXEL_FORMAT_ANY */
+   0,
+   0,
+   2,
+   2,
+   2,
+   3,
+   4,
+   4,
+   4,  /* ALLEGRO_PIXEL_FORMAT_ARGB_8888 */
+   4,
+   2,
+   3,
+   2,
+   2,
+   2,
+   2,
+   4,
+   4,
+   3,
+   2,
+   2,
+   4,
+   4,
+   16, /* ALLEGRO_PIXEL_FORMAT_ABGR_F32 */
+   4,  /* ALLEGRO_PIXEL_FORMAT_ABGR_LE */
+   2,  /* ALLEGRO_PIXEL_FORMAT_RGBA_4444 */
+   1,  /* ALLEGRO_PIXEL_FORMAT_SINGLE_CHANNEL_8 */
+   8,
+   16,
+   16,
+   8,
+};
+
 static bool format_alpha_table[ALLEGRO_NUM_PIXEL_FORMATS] = {
    false, /* neutral (ALLEGRO_PIXEL_FORMAT_ANY) */
    false,
@@ -295,6 +365,22 @@ void _al_init_pixels(void)
 
    for (i = 0; i < 64; i++)
       _al_rgb_scale_6[i] = i * 255 / 63;
+}
+
+
+/* Function: al_get_pixel_block_size
+ */
+int al_get_pixel_block_size(int format)
+{
+   return pixel_block_sizes[format];
+}
+
+
+/* Function: al_get_pixel_block_width
+ */
+int al_get_pixel_block_width(int format)
+{
+   return pixel_block_widths[format];
 }
 
 

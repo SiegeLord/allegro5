@@ -499,6 +499,45 @@ static bool transfer_bitmap_data(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst)
 }
 
 
+void _al_copy_bitmap_data(
+   const void *src, int src_pitch, void *dst, int dst_pitch,
+   int sx, int sy, int dx, int dy, int width, int height,
+   int format)
+{
+   int block_width = al_get_pixel_block_width(format);
+   int block_size = al_get_pixel_block_size(format);
+   const char *src_ptr = src;
+   char *dst_ptr = dst;
+   int y;
+
+   ASSERT(src);
+   ASSERT(dst);
+   ASSERT(_al_pixel_format_is_real(format));
+   ASSERT(height % block_width == 0);
+   ASSERT(width % block_width == 0);
+   ASSERT(sx % block_width == 0);
+   ASSERT(sy % block_width == 0);
+   ASSERT(dy % block_width == 0);
+   ASSERT(dx % block_width == 0);
+
+   sx /= block_width;
+   sy /= block_width;
+   dx /= block_width;
+   dy /= block_width;
+   width /= block_width;
+   height /= block_width;
+
+   src_ptr += sy * src_pitch + sx * block_size;
+   dst_ptr += dy * dst_pitch + dx * block_size;
+
+   for (y = 0; y < height; y++) {
+      memcpy(dst_ptr, src_ptr, width * block_size);
+      src_ptr += src_pitch;
+      dst_ptr += dst_pitch;
+   }
+}
+
+
 void _al_convert_bitmap_data(
    const void *src, int src_format, int src_pitch,
    void *dst, int dst_format, int dst_pitch,
@@ -510,16 +549,8 @@ void _al_convert_bitmap_data(
 
    /* Use memcpy if no conversion is needed. */
    if (src_format == dst_format) {
-      int y;
-      int size = al_get_pixel_size(src_format);
-      const char *src_ptr = ((const char *)src) + sy * src_pitch + sx * size;
-      char *dst_ptr = ((char *)dst) + dy * dst_pitch + dx * size;
-      width = width * size;
-      for (y = 0; y < height; y++) {
-         memcpy(dst_ptr, src_ptr, width);
-         src_ptr += src_pitch;
-         dst_ptr += dst_pitch;
-      }
+      _al_copy_bitmap_data(src, src_pitch, dst, dst_pitch, sx, sy,
+         dx, dy, width, height, src_format);
       return;
    }
 

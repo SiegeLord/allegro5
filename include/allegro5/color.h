@@ -73,7 +73,8 @@ AL_FUNC(void, al_unmap_rgba_f, (ALLEGRO_COLOR color, float *r, float *g, float *
 /* Pixel formats */
 AL_FUNC(int, al_get_pixel_size, (int format));
 AL_FUNC(int, al_get_pixel_format_bits, (int format));
-
+AL_FUNC(int, al_get_pixel_block_size, (int format));
+AL_FUNC(int, al_get_pixel_block_width, (int format));
 
 #ifdef __cplusplus
    }
