@@ -116,7 +116,6 @@ static int allegro_formats[] = {
    ALLEGRO_PIXEL_FORMAT_RGBA_DXT1,
    ALLEGRO_PIXEL_FORMAT_RGBA_DXT3,
    ALLEGRO_PIXEL_FORMAT_RGBA_DXT5,
-   ALLEGRO_PIXEL_FORMAT_RGB_DXT1,
    -1
 };
 
@@ -141,7 +140,6 @@ static int d3d_formats[] = {
    FOURCC('D', 'X', 'T', '1'),
    FOURCC('D', 'X', 'T', '3'),
    FOURCC('D', 'X', 'T', '5'),
-   FOURCC('D', 'X', 'T', '1'),
    -1
 };
 

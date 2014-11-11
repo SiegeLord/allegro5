@@ -60,7 +60,6 @@ static int pixel_sizes[] = {
    0,
    0,
    0,
-   0,
 };
 
 static int pixel_bits[] = {
@@ -92,7 +91,6 @@ static int pixel_bits[] = {
    32, /* ALLEGRO_PIXEL_FORMAT_ABGR_LE */
    16, /* ALLEGRO_PIXEL_FORMAT_RGBA_4444 */
    8, /* ALLEGRO_PIXEL_FORMAT_SINGLE_CHANNEL_8 */
-   0,
    0,
    0,
    0,
@@ -130,7 +128,6 @@ static int pixel_block_widths[] = {
    4,
    4,
    4,
-   4,
 };
 
 static int pixel_block_sizes[] = {
@@ -165,7 +162,6 @@ static int pixel_block_sizes[] = {
    8,
    16,
    16,
-   8,
 };
 
 static bool format_alpha_table[ALLEGRO_NUM_PIXEL_FORMATS] = {
@@ -200,7 +196,6 @@ static bool format_alpha_table[ALLEGRO_NUM_PIXEL_FORMATS] = {
    true,
    true,
    true,
-   false,
 };
 
 static char const *pixel_format_names[ALLEGRO_NUM_PIXEL_FORMATS + 1] = {
@@ -235,7 +230,6 @@ static char const *pixel_format_names[ALLEGRO_NUM_PIXEL_FORMATS + 1] = {
    "RGBA_DXT1",
    "RGBA_DXT3",
    "RGBA_DXT5",
-   "RGB_DXT1", 
    "INVALID"
 };
 
@@ -269,7 +263,6 @@ static bool format_is_real[ALLEGRO_NUM_PIXEL_FORMATS] =
    true, /* ALLEGRO_PIXEL_FORMAT_ABGR_LE */
    true, /* ALLEGRO_PIXEL_FORMAT_RGBA_4444 */
    true, /* ALLEGRO_PIXEL_FORMAT_SINGLE_CHANNEL_8 */
-   true,
    true,
    true,
    true,
@@ -308,7 +301,6 @@ static bool format_is_video_only[ALLEGRO_NUM_PIXEL_FORMATS] =
    true,
    true,
    true,
-   true,
 };
 
 static bool format_is_compressed[ALLEGRO_NUM_PIXEL_FORMATS] =
@@ -341,7 +333,6 @@ static bool format_is_compressed[ALLEGRO_NUM_PIXEL_FORMATS] =
    false, /* ALLEGRO_PIXEL_FORMAT_ABGR_LE */
    false, /* ALLEGRO_PIXEL_FORMAT_RGBA_4444 */
    false, /* ALLEGRO_PIXEL_FORMAT_SINGLE_CHANNEL_8 */
-   true,
    true,
    true,
    true,

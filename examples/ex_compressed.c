@@ -25,13 +25,12 @@ int main(int argc, char **argv)
    bool redraw = true;
    int ii;
    int cur_bitmap = 0;
-   #define NUM_BITMAPS 5
+   #define NUM_BITMAPS 4
    BITMAP_TYPE bitmaps[NUM_BITMAPS] = {
-      {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_RGB_DXT1,  "DXT1 (no alpha)"},
-      {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_ANY,       "Uncompressed"},
       {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT1, "DXT1"},
       {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT3, "DXT3"},
       {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_RGBA_DXT5, "DXT5"},
+      {NULL, NULL, NULL, ALLEGRO_PIXEL_FORMAT_ANY,       "Uncompressed"},
    };
 
    if (argc > 1) {

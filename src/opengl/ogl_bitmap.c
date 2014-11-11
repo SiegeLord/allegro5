@@ -122,7 +122,6 @@ int _al_ogl_get_glformat(int format, int component)
       {GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_UNSIGNED_INT_8_8_8_8, GL_RGBA}, /* RGBA_DXT1 */
       {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_UNSIGNED_INT_8_8_8_8, GL_RGBA}, /* RGBA_DXT3 */
       {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_UNSIGNED_INT_8_8_8_8, GL_RGBA}, /* RGBA_DXT5 */
-      {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_UNSIGNED_BYTE, GL_RGB}, /* RGB_DXT1 */
    };
   
    if (al_get_opengl_version() >= _ALLEGRO_OPENGL_VERSION_3_0) {
@@ -161,7 +160,6 @@ int _al_ogl_get_glformat(int format, int component)
       {GL_RGBA, GL_UNSIGNED_BYTE, GL_RGBA}, /* ABGR_8888_LE */
       {GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, GL_RGBA}, /* RGBA_4444 */
       {GL_LUMINANCE, GL_UNSIGNED_BYTE, GL_LUMINANCE}, /* SINGLE_CHANNEL_8 */
-      {0, 0, 0},
       {0, 0, 0},
       {0, 0, 0},
       {0, 0, 0},
