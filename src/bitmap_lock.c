@@ -28,6 +28,8 @@ ALLEGRO_LOCKED_REGION *al_lock_bitmap_region(ALLEGRO_BITMAP *bitmap,
    ALLEGRO_LOCKED_REGION *lr;
    int bitmap_format = al_get_bitmap_format(bitmap);
    int bitmap_flags = al_get_bitmap_flags(bitmap);
+   int block_width = al_get_pixel_block_width(bitmap_format);
+   int xc, yc, wc, hc;
    ASSERT(x >= 0);
    ASSERT(y >= 0);
    ASSERT(width >= 0);
@@ -51,11 +53,24 @@ ALLEGRO_LOCKED_REGION *al_lock_bitmap_region(ALLEGRO_BITMAP *bitmap,
    ASSERT(x+width <= bitmap->w);
    ASSERT(y+height <= bitmap->h);
 
-   bitmap->lock_x = x;
-   bitmap->lock_y = y;
-   bitmap->lock_w = width;
-   bitmap->lock_h = height;
+   xc = (x / block_width) * block_width;
+   yc = (y / block_width) * block_width;
+   wc = _al_get_least_multiple(x + width, block_width) - xc;
+   hc = _al_get_least_multiple(y + height, block_width) - yc;
+
+   bitmap->lock_x = xc;
+   bitmap->lock_y = yc;
+   bitmap->lock_w = wc;
+   bitmap->lock_h = hc;
    bitmap->lock_flags = flags;
+
+   if (flags == ALLEGRO_LOCK_WRITEONLY
+         && (xc != x || yc != y || wc != width || hc != height)) {
+      /* Unaligned write-only access requires that we fill in the padding
+       * from the texture.
+       * XXX: In principle, this could be done more efficiently. */
+      flags = ALLEGRO_LOCK_READWRITE;
+   }
 
    if (bitmap_flags & ALLEGRO_MEMORY_BITMAP) {
       int f = _al_get_real_pixel_format(al_get_current_display(), format);
@@ -65,31 +80,34 @@ ALLEGRO_LOCKED_REGION *al_lock_bitmap_region(ALLEGRO_BITMAP *bitmap,
       ASSERT(bitmap->memory);
       if (format == ALLEGRO_PIXEL_FORMAT_ANY || bitmap_format == format || bitmap_format == f) {
          bitmap->locked_region.data = bitmap->memory
-            + bitmap->pitch * y + x * al_get_pixel_size(bitmap_format);
+            + bitmap->pitch * yc + xc * al_get_pixel_size(bitmap_format);
          bitmap->locked_region.format = bitmap_format;
          bitmap->locked_region.pitch = bitmap->pitch;
          bitmap->locked_region.pixel_size = al_get_pixel_size(bitmap_format);
       }
       else {
-         bitmap->locked_region.pitch = al_get_pixel_size(f) * width;
-         bitmap->locked_region.data = al_malloc(bitmap->locked_region.pitch*height);
+         bitmap->locked_region.pitch = al_get_pixel_size(f) * wc;
+         bitmap->locked_region.data = al_malloc(bitmap->locked_region.pitch*hc);
          bitmap->locked_region.format = f;
          bitmap->locked_region.pixel_size = al_get_pixel_size(f);
          if (!(bitmap->lock_flags & ALLEGRO_LOCK_WRITEONLY)) {
             _al_convert_bitmap_data(
                bitmap->memory, bitmap_format, bitmap->pitch,
                bitmap->locked_region.data, f, bitmap->locked_region.pitch,
-               x, y, 0, 0, width, height);
+               xc, yc, 0, 0, wc, hc);
          }
       }
       lr = &bitmap->locked_region;
    }
    else {
-      lr = bitmap->vt->lock_region(bitmap, x, y, width, height, format, flags);
+      lr = bitmap->vt->lock_region(bitmap, xc, yc, wc, hc, format, flags);
       if (!lr) {
          return NULL;
       }
    }
+
+   /* Fixup the data pointer for unaligned access */
+   lr->data = (char*)lr->data + (xc - x) * lr->pixel_size + (yc - y) * lr->pitch;
 
    bitmap->locked = true;
 

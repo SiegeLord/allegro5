@@ -385,16 +385,6 @@ static int pot(int x)
 
 
 
-/* Helper to get the smallest larger multiple of 4. */
-static int multiple_of_4(int x)
-{
-   if (x % 4 == 0)
-      return x;
-   else
-      return (x / 4 + 1) * 4;
-}
-
-
 // FIXME: need to do all the logic AllegroGL does, checking extensions,
 // proxy textures, formats, limits ...
 static bool ogl_upload_bitmap(ALLEGRO_BITMAP *bitmap)
@@ -633,23 +623,26 @@ ALLEGRO_BITMAP *_al_ogl_create_bitmap(ALLEGRO_DISPLAY *d, int w, int h,
    ALLEGRO_BITMAP_EXTRA_OPENGL *extra;
    int true_w;
    int true_h;
+   int block_width;
    (void)d;
+
+   format = _al_get_real_pixel_format(d, format);
+   ASSERT(_al_pixel_format_is_real(format));
+
+   block_width = al_get_pixel_block_width(format);
+   true_w = _al_get_least_multiple(w, block_width);
+   true_h = _al_get_least_multiple(h, block_width);
 
    /* Android included because some devices require POT FBOs */
    if (!IS_OPENGLES &&
       d->extra_settings.settings[ALLEGRO_SUPPORT_NPOT_BITMAP])
    {
-      true_w = w;
-      true_h = h;
+      true_w = true_w;
+      true_h = true_h;
    }
    else {
-      true_w = pot(w);
-      true_h = pot(h);
-   }
-
-   if (_al_pixel_format_is_compressed(format)) {
-      true_w = multiple_of_4(true_w);
-      true_h = multiple_of_4(true_h);
+      true_w = pot(true_w);
+      true_h = pot(true_h);
    }
 
    /* This used to be an iOS/Android only workaround - but
@@ -669,9 +662,8 @@ ALLEGRO_BITMAP *_al_ogl_create_bitmap(ALLEGRO_DISPLAY *d, int w, int h,
       }
    }
 
-   format = _al_get_real_pixel_format(d, format);
-
-   ASSERT(_al_pixel_format_is_real(format));
+   ASSERT(true_w % block_width == 0);
+   ASSERT(true_h % block_width == 0);
 
    bitmap = al_calloc(1, sizeof *bitmap);
    ASSERT(bitmap);

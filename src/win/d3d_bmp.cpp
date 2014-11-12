@@ -845,21 +845,10 @@ static ALLEGRO_LOCKED_REGION *d3d_lock_region(ALLEGRO_BITMAP *bitmap,
    else {
       LPDIRECT3DTEXTURE9 texture;
       if (_al_pixel_format_is_compressed(bitmap_format)) {
-         int block_width = al_get_pixel_block_width(bitmap_format);
-         int xc = (x / block_width) * block_width;
-         int yc = (y / block_width) * block_width;
-         int wc = _al_get_least_multiple(x + w, block_width) - xc;
-         int hc = _al_get_least_multiple(y + h, block_width) - yc;
-
-         /* Need to read if the lock is non-aligned */
-         if (!(flags & ALLEGRO_LOCK_WRITEONLY)
-            && xc == x
-            && yc == y
-            && w == wc
-            && h == hc) {
+         if (!(flags & ALLEGRO_LOCK_WRITEONLY)) {
             if(!convert_compressed(
-               d3d_bmp->system_texture, d3d_bmp->video_texture,
-               xc, yc, wc, hc)) {
+                  d3d_bmp->system_texture, d3d_bmp->video_texture,
+                  x, y, w, h)) {
                ALLEGRO_ERROR("Could not decompress.\n");
                return NULL;
             }
