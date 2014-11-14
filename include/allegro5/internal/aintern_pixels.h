@@ -252,6 +252,13 @@
             abort();                                                          \
             break;                                                            \
                                                                               \
+         case ALLEGRO_PIXEL_FORMAT_RGBA_DXT1:                                 \
+         case ALLEGRO_PIXEL_FORMAT_RGBA_DXT3:                                 \
+         case ALLEGRO_PIXEL_FORMAT_RGBA_DXT5:                                 \
+            ALLEGRO_ERROR("INLINE_GET got compressed format: %d\n", format); \
+            abort();                                                          \
+            break;                                                            \
+                                                                              \
          case ALLEGRO_NUM_PIXEL_FORMATS:                                      \
          default:                                                             \
             ALLEGRO_ERROR("INLINE_GET got non pixel format: %d\n", format); \
@@ -457,6 +464,13 @@
          case ALLEGRO_PIXEL_FORMAT_ANY_32_NO_ALPHA:                           \
          case ALLEGRO_PIXEL_FORMAT_ANY_32_WITH_ALPHA:                         \
             ALLEGRO_ERROR("INLINE_PUT got fake _pp_pixel format: %d\n", format); \
+            abort();                                                          \
+            break;                                                            \
+                                                                              \
+         case ALLEGRO_PIXEL_FORMAT_RGBA_DXT1:                                 \
+         case ALLEGRO_PIXEL_FORMAT_RGBA_DXT3:                                 \
+         case ALLEGRO_PIXEL_FORMAT_RGBA_DXT5:                                 \
+            ALLEGRO_ERROR("INLINE_PUT got compressed format: %d\n", format); \
             abort();                                                          \
             break;                                                            \
                                                                               \

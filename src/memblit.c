@@ -293,8 +293,8 @@ static void _al_draw_bitmap_region_memory_fast(ALLEGRO_BITMAP *bitmap,
 
    /* will detect if no conversion is needed */
    _al_convert_bitmap_data(
-      src_region->data, al_get_bitmap_format(bitmap), src_region->pitch,
-      dst_region->data, al_get_bitmap_format(dest), dst_region->pitch,
+      src_region->data, src_region->format, src_region->pitch,
+      dst_region->data, dst_region->format, dst_region->pitch,
       0, 0, 0, 0, sw, sh);
 
    al_unlock_bitmap(bitmap);
