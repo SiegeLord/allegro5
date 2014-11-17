@@ -110,10 +110,14 @@ struct ALLEGRO_BITMAP_INTERFACE
    void (*destroy_bitmap)(ALLEGRO_BITMAP *bitmap);
 
    ALLEGRO_LOCKED_REGION * (*lock_region)(ALLEGRO_BITMAP *bitmap,
-   	int x, int y, int w, int h, int format,
-	int flags);
+      int x, int y, int w, int h, int format, int flags);
 
    void (*unlock_region)(ALLEGRO_BITMAP *bitmap);
+
+   ALLEGRO_LOCKED_REGION * (*lock_compressed_region)(ALLEGRO_BITMAP *bitmap,
+      int x, int y, int w, int h, int flags);
+
+   void (*unlock_compressed_region)(ALLEGRO_BITMAP *bitmap);
 
    /* Used to update any dangling pointers the bitmap driver might keep. */
    void (*bitmap_pointer_changed)(ALLEGRO_BITMAP *bitmap, ALLEGRO_BITMAP *old);

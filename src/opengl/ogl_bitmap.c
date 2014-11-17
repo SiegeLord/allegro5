@@ -589,6 +589,189 @@ static void ogl_bitmap_pointer_changed(ALLEGRO_BITMAP *bitmap,
    }
 }
 
+static ALLEGRO_LOCKED_REGION *ogl_lock_compressed_region(ALLEGRO_BITMAP *bitmap,
+   int x, int y, int w, int h, int flags)
+{
+   ALLEGRO_BITMAP_EXTRA_OPENGL *const ogl_bitmap = bitmap->extra;
+   ALLEGRO_DISPLAY *disp;
+   ALLEGRO_DISPLAY *old_disp = NULL;
+   GLenum e;
+   bool ok = true;
+   int bitmap_format = al_get_bitmap_format(bitmap);
+   int block_width = al_get_pixel_block_width(bitmap_format);
+   int block_size = al_get_pixel_block_size(bitmap_format);
+   int xc = x / block_width;
+   int yc = y / block_width;
+   int wc = w / block_width;
+   int hc = h / block_width;
+   int gl_yc =
+      _al_get_least_multiple(bitmap->h, block_width) / block_width
+      - yc - hc;
+   
+   if (flags & ALLEGRO_LOCK_WRITEONLY) {
+      int pitch = wc * block_size;
+      ogl_bitmap->lock_buffer = al_malloc(pitch * hc);
+      if (ogl_bitmap->lock_buffer == NULL) {
+         return NULL;
+      }
+
+      bitmap->locked_region.data = ogl_bitmap->lock_buffer + pitch * (hc - 1);
+      bitmap->locked_region.format = bitmap_format;
+      bitmap->locked_region.pitch = -pitch;
+      bitmap->locked_region.pixel_size = block_size;
+      return &bitmap->locked_region;
+   }
+
+   disp = al_get_current_display();
+
+   /* Change OpenGL context if necessary. */
+   if (!disp ||
+      (_al_get_bitmap_display(bitmap)->ogl_extras->is_shared == false &&
+       _al_get_bitmap_display(bitmap) != disp))
+   {
+      old_disp = disp;
+      _al_set_current_display_only(_al_get_bitmap_display(bitmap));
+   }
+
+   /* Set up the pixel store state.  We will need to match it when unlocking.
+    * There may be other pixel store state we should be setting.
+    * See also pitfalls 7 & 8 from:
+    * http://www.opengl.org/resources/features/KilgardTechniques/oglpitfall/
+    */
+   glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+   {
+      glPixelStorei(GL_PACK_ALIGNMENT, 1);
+      e = glGetError();
+      if (e) {
+         ALLEGRO_ERROR("glPixelStorei(GL_PACK_ALIGNMENT, %d) failed (%s).\n",
+            1, _al_gl_error_string(e));
+         ok = false;
+      }
+   }
+
+   if (ok) {
+      int true_wc = ogl_bitmap->true_w / block_width;
+      int true_hc = ogl_bitmap->true_h / block_width;
+      ogl_bitmap->lock_buffer = al_malloc(true_wc * true_hc * block_size);
+      
+      if (ogl_bitmap->lock_buffer != NULL) {
+         glBindTexture(GL_TEXTURE_2D, ogl_bitmap->texture);
+         glGetCompressedTexImage(GL_TEXTURE_2D, 0, ogl_bitmap->lock_buffer);
+         
+         e = glGetError();
+         if (e) {
+            ALLEGRO_ERROR("glGetCompressedTexImage for format %s failed (%s).\n",
+               _al_pixel_format_name(bitmap_format), _al_gl_error_string(e));
+            al_free(ogl_bitmap->lock_buffer);
+            ogl_bitmap->lock_buffer = NULL;
+            ok = false;
+         }
+         else {
+            int pitch = true_wc * block_size;
+            bitmap->locked_region.data = ogl_bitmap->lock_buffer +
+               pitch * (gl_yc + hc - 1) + block_size * xc;
+            bitmap->locked_region.format = bitmap_format;
+            bitmap->locked_region.pitch = -pitch;
+            bitmap->locked_region.pixel_size = block_size;
+         }
+      }
+      else {
+         ok = false;
+      }
+   }
+
+   glPopClientAttrib();
+
+   if (old_disp != NULL) {
+      _al_set_current_display_only(old_disp);
+   }
+
+   if (ok) {
+      return &bitmap->locked_region;
+   }
+
+   ALLEGRO_ERROR("Failed to lock region\n");
+   ASSERT(ogl_bitmap->lock_buffer == NULL);
+   return NULL;
+}
+
+
+static void ogl_unlock_compressed_region(ALLEGRO_BITMAP *bitmap)
+{
+   ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_bitmap = bitmap->extra;
+   int lock_format = bitmap->locked_region.format;
+   ALLEGRO_DISPLAY *old_disp = NULL;
+   ALLEGRO_DISPLAY *disp;
+   GLenum e;
+   int block_size = al_get_pixel_block_size(lock_format);
+   int block_width = al_get_pixel_block_width(lock_format);
+   int data_size = bitmap->lock_h * bitmap->lock_w /
+      (block_width * block_width) * block_size;
+   unsigned char *start_ptr;
+   int gl_y = _al_get_least_multiple(bitmap->h, block_width)
+      - bitmap->lock_y - bitmap->lock_h;
+
+   if ((bitmap->lock_flags & ALLEGRO_LOCK_READONLY)) {
+      goto EXIT;
+   }
+
+   disp = al_get_current_display();
+
+   /* Change OpenGL context if necessary. */
+   if (!disp ||
+      (_al_get_bitmap_display(bitmap)->ogl_extras->is_shared == false &&
+       _al_get_bitmap_display(bitmap) != disp))
+   {
+      old_disp = disp;
+      _al_set_current_display_only(_al_get_bitmap_display(bitmap));
+   }
+
+   /* Keep this in sync with ogl_lock_compressed_region. */
+   glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+   {
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+      e = glGetError();
+      if (e) {
+         ALLEGRO_ERROR("glPixelStorei(GL_UNPACK_ALIGNMENT, %d) failed (%s).\n",
+            1, _al_gl_error_string(e));
+      }
+   }
+
+   if (bitmap->lock_flags & ALLEGRO_LOCK_WRITEONLY) {
+      ALLEGRO_DEBUG("Unlocking compressed WRITEONLY\n");
+      start_ptr = ogl_bitmap->lock_buffer;
+   }
+   else {
+      ALLEGRO_DEBUG("Unlocking compressed READWRITE\n");
+      glPixelStorei(GL_UNPACK_ROW_LENGTH, ogl_bitmap->true_w);
+      start_ptr = (unsigned char *)bitmap->locked_region.data
+            + (bitmap->lock_h / block_width - 1) * bitmap->locked_region.pitch;
+   }
+
+   glBindTexture(GL_TEXTURE_2D, ogl_bitmap->texture);
+   glCompressedTexSubImage2D(GL_TEXTURE_2D, 0,
+      bitmap->lock_x, gl_y,
+      bitmap->lock_w, bitmap->lock_h,
+      get_glformat(lock_format, 0),
+      data_size,
+      start_ptr);
+
+   e = glGetError();
+   if (e) {
+      ALLEGRO_ERROR("glCompressedTexSubImage2D for format %s failed (%s).\n",
+         _al_pixel_format_name(lock_format), _al_gl_error_string(e));
+   }
+
+   glPopClientAttrib();
+
+   if (old_disp) {
+      _al_set_current_display_only(old_disp);
+   }
+   
+EXIT:
+   al_free(ogl_bitmap->lock_buffer);
+   ogl_bitmap->lock_buffer = NULL;
+}
 
 
 /* Obtain a reference to this driver. */
@@ -610,6 +793,8 @@ static ALLEGRO_BITMAP_INTERFACE *ogl_bitmap_driver(void)
    glbmp_vt.lock_region = _al_ogl_lock_region_new;
    glbmp_vt.unlock_region = _al_ogl_unlock_region_new;
 #endif
+   glbmp_vt.lock_compressed_region = ogl_lock_compressed_region;
+   glbmp_vt.unlock_compressed_region = ogl_unlock_compressed_region;
 
    return &glbmp_vt;
 }

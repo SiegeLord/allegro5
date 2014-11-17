@@ -957,6 +957,49 @@ static void d3d_update_clipping_rectangle(ALLEGRO_BITMAP *bitmap)
 }
 
 
+static ALLEGRO_LOCKED_REGION *d3d_lock_compressed_region(
+   ALLEGRO_BITMAP *bitmap, int x, int y, int w, int h,
+   int flags)
+{
+   ALLEGRO_BITMAP_EXTRA_D3D *d3d_bmp = get_extra(bitmap);
+   int bitmap_format = al_get_bitmap_format(bitmap);
+   
+   if (d3d_bmp->display->device_lost)
+      return NULL;
+   
+   ASSERT(_al_pixel_format_is_compressed(bitmap_format));
+
+   RECT rect;
+   DWORD Flags = flags & ALLEGRO_LOCK_READONLY ? D3DLOCK_READONLY : 0;
+
+   rect.left = x;
+   rect.right = x + w;
+   rect.top = y;
+   rect.bottom = y + h;
+   
+   if (d3d_bmp->video_texture->LockRect(0, &d3d_bmp->locked_rect, &rect, Flags) != D3D_OK) {
+      ALLEGRO_ERROR("LockRect failed in d3d_lock_region.\n");
+      return NULL;
+   }
+   
+   bitmap->locked_region.data = d3d_bmp->locked_rect.pBits;
+   bitmap->locked_region.format = bitmap_format;
+   bitmap->locked_region.pitch = d3d_bmp->locked_rect.Pitch;
+   bitmap->locked_region.pixel_size = al_get_pixel_block_size(bitmap_format);
+
+   return &bitmap->locked_region;
+}
+
+
+static void d3d_unlock_compressed_region(ALLEGRO_BITMAP *bitmap)
+{
+   ALLEGRO_BITMAP_EXTRA_D3D *d3d_bmp = get_extra(bitmap);
+   ASSERT(_al_pixel_format_is_compressed(al_get_bitmap_format(bitmap)));
+
+   d3d_bmp->video_texture->UnlockRect(0);
+}
+
+
 /* Obtain a reference to this driver. */
 ALLEGRO_BITMAP_INTERFACE *_al_bitmap_d3d_driver(void)
 {
@@ -972,6 +1015,8 @@ ALLEGRO_BITMAP_INTERFACE *_al_bitmap_d3d_driver(void)
    vt->destroy_bitmap = _al_d3d_destroy_bitmap;
    vt->lock_region = d3d_lock_region;
    vt->unlock_region = d3d_unlock_region;
+   vt->lock_compressed_region = d3d_lock_compressed_region;
+   vt->unlock_compressed_region = d3d_unlock_compressed_region;
    vt->update_clipping_rectangle = d3d_update_clipping_rectangle;
 
    return vt;

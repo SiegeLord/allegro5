@@ -468,29 +468,45 @@ static bool transfer_bitmap_data(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst)
    int dst_format = al_get_bitmap_format(dst);
    bool src_compressed = _al_pixel_format_is_compressed(src_format);
    bool dst_compressed = _al_pixel_format_is_compressed(dst_format);
-   int lock_format = ALLEGRO_PIXEL_FORMAT_ANY;
+   int copy_w = src->w;
+   int copy_h = src->h;
+   
+   if (src_compressed && dst_compressed && src_format == dst_format) {
+      int block_width = al_get_pixel_block_width(src_format);
+      if (!(src_region = al_lock_bitmap_blocked(src, ALLEGRO_LOCK_READONLY)))
+         return false;
 
-   /* Go through a non-compressed intermediate */
-   if (src_compressed && !dst_compressed) {
-      lock_format = dst_format;
+      if (!(dst_region = al_lock_bitmap_blocked(dst, ALLEGRO_LOCK_WRITEONLY))) {
+         al_unlock_bitmap(src);
+         return false;
+      }
+      copy_w = _al_get_least_multiple(copy_w, block_width);
+      copy_h = _al_get_least_multiple(copy_h, block_width);
+      ALLEGRO_DEBUG("Taking fast clone path");
    }
-   else if (!src_compressed && dst_compressed) {
-      lock_format = src_format;
-   }
+   else {
+      int lock_format = ALLEGRO_PIXEL_FORMAT_ANY;
+      /* Go through a non-compressed intermediate */
+      if (src_compressed && !dst_compressed) {
+         lock_format = dst_format;
+      }
+      else if (!src_compressed && dst_compressed) {
+         lock_format = src_format;
+      }
+      
+      if (!(src_region = al_lock_bitmap(src, lock_format, ALLEGRO_LOCK_READONLY)))
+         return false;
 
-   /* Perform the conversion here, rather than with the dst_lock, because while it may be */
-   if (!(src_region = al_lock_bitmap(src, lock_format, ALLEGRO_LOCK_READONLY)))
-      return false;
-
-   if (!(dst_region = al_lock_bitmap(dst, lock_format, ALLEGRO_LOCK_WRITEONLY))) {
-      al_unlock_bitmap(src);
-      return false;
+      if (!(dst_region = al_lock_bitmap(dst, lock_format, ALLEGRO_LOCK_WRITEONLY))) {
+         al_unlock_bitmap(src);
+         return false;
+      }
    }
 
    _al_convert_bitmap_data(
       src_region->data, src_region->format, src_region->pitch,
       dst_region->data, dst_region->format, dst_region->pitch,
-      0, 0, 0, 0, src->w, src->h);
+      0, 0, 0, 0, copy_w, copy_h);
 
    al_unlock_bitmap(src);
    al_unlock_bitmap(dst);
