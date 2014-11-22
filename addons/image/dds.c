@@ -120,8 +120,7 @@ ALLEGRO_BITMAP *_al_load_dds_f(ALLEGRO_FILE *f, int flags)
       goto FAIL;
    }
 
-   if (!(al_get_bitmap_flags(bmp) & ALLEGRO_VIDEO_BITMAP) ||
-         !(al_get_bitmap_format(bmp) != format)) {
+   if (al_get_bitmap_format(bmp) != format) {
       ALLEGRO_ERROR("Created a bad bitmap.\n");
       goto FAIL;
    }
