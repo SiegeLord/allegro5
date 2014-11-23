@@ -921,6 +921,13 @@ ALLEGRO_BITMAP *_al_ogl_create_bitmap(ALLEGRO_DISPLAY *d, int w, int h,
    true_w = _al_get_least_multiple(w, block_width);
    true_h = _al_get_least_multiple(h, block_width);
 
+   if (_al_pixel_format_is_compressed(format)) {
+      if (!al_get_opengl_extension_list()->ALLEGRO_GL_EXT_texture_compression_s3tc) {
+         ALLEGRO_DEBUG("Device does not support compressed textures.");
+         return NULL;
+      }
+   }
+
    /* Android included because some devices require POT FBOs */
    if (!IS_OPENGLES &&
       d->extra_settings.settings[ALLEGRO_SUPPORT_NPOT_BITMAP])
