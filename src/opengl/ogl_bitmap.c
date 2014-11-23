@@ -604,9 +604,9 @@ static ALLEGRO_LOCKED_REGION *ogl_lock_compressed_region(ALLEGRO_BITMAP *bitmap,
    int yc = y / block_width;
    int wc = w / block_width;
    int hc = h / block_width;
-   int gl_yc =
-      _al_get_least_multiple(bitmap->h, block_width) / block_width
-      - yc - hc;
+   int true_wc = ogl_bitmap->true_w / block_width;
+   int true_hc = ogl_bitmap->true_h / block_width;
+   int gl_yc = true_hc - yc - hc;
    
    if (flags & ALLEGRO_LOCK_WRITEONLY) {
       int pitch = wc * block_size;
@@ -650,14 +650,11 @@ static ALLEGRO_LOCKED_REGION *ogl_lock_compressed_region(ALLEGRO_BITMAP *bitmap,
    }
 
    if (ok) {
-      int true_wc = ogl_bitmap->true_w / block_width;
-      int true_hc = ogl_bitmap->true_h / block_width;
       ogl_bitmap->lock_buffer = al_malloc(true_wc * true_hc * block_size);
       
       if (ogl_bitmap->lock_buffer != NULL) {
          glBindTexture(GL_TEXTURE_2D, ogl_bitmap->texture);
          glGetCompressedTexImage(GL_TEXTURE_2D, 0, ogl_bitmap->lock_buffer);
-         
          e = glGetError();
          if (e) {
             ALLEGRO_ERROR("glGetCompressedTexImage for format %s failed (%s).\n",
@@ -667,11 +664,32 @@ static ALLEGRO_LOCKED_REGION *ogl_lock_compressed_region(ALLEGRO_BITMAP *bitmap,
             ok = false;
          }
          else {
-            int pitch = true_wc * block_size;
-            bitmap->locked_region.data = ogl_bitmap->lock_buffer +
-               pitch * (gl_yc + hc - 1) + block_size * xc;
+            if (flags == ALLEGRO_LOCK_READWRITE) {
+               /* Need to make the locked memory contiguous, as
+                * glCompressedTexSubImage2D cannot read strided
+                * memory. */
+               int y;
+               int src_pitch = true_wc * block_size;
+               int dest_pitch = wc * block_size;
+               char* dest_ptr = (char*)ogl_bitmap->lock_buffer;
+               char* src_ptr = (char*)ogl_bitmap->lock_buffer
+                  + src_pitch * gl_yc + block_size * xc;
+               for (y = 0; y < hc; y++) {
+                  memmove(dest_ptr, src_ptr, dest_pitch);
+                  src_ptr += src_pitch;
+                  dest_ptr += dest_pitch;
+               }
+               bitmap->locked_region.data = ogl_bitmap->lock_buffer +
+                  dest_pitch * (hc - 1);
+               bitmap->locked_region.pitch = -dest_pitch;
+            }
+            else {
+               int pitch = true_wc * block_size;
+               bitmap->locked_region.data = ogl_bitmap->lock_buffer +
+                  pitch * (gl_yc + hc - 1) + block_size * xc;
+               bitmap->locked_region.pitch = -pitch;
+            }
             bitmap->locked_region.format = bitmap_format;
-            bitmap->locked_region.pitch = -pitch;
             bitmap->locked_region.pixel_size = block_size;
          }
       }
@@ -707,7 +725,6 @@ static void ogl_unlock_compressed_region(ALLEGRO_BITMAP *bitmap)
    int block_width = al_get_pixel_block_width(lock_format);
    int data_size = bitmap->lock_h * bitmap->lock_w /
       (block_width * block_width) * block_size;
-   unsigned char *start_ptr;
    int gl_y = _al_get_least_multiple(bitmap->h, block_width)
       - bitmap->lock_y - bitmap->lock_h;
 
@@ -737,24 +754,13 @@ static void ogl_unlock_compressed_region(ALLEGRO_BITMAP *bitmap)
       }
    }
 
-   if (bitmap->lock_flags & ALLEGRO_LOCK_WRITEONLY) {
-      ALLEGRO_DEBUG("Unlocking compressed WRITEONLY\n");
-      start_ptr = ogl_bitmap->lock_buffer;
-   }
-   else {
-      ALLEGRO_DEBUG("Unlocking compressed READWRITE\n");
-      glPixelStorei(GL_UNPACK_ROW_LENGTH, ogl_bitmap->true_w);
-      start_ptr = (unsigned char *)bitmap->locked_region.data
-            + (bitmap->lock_h / block_width - 1) * bitmap->locked_region.pitch;
-   }
-
    glBindTexture(GL_TEXTURE_2D, ogl_bitmap->texture);
    glCompressedTexSubImage2D(GL_TEXTURE_2D, 0,
       bitmap->lock_x, gl_y,
       bitmap->lock_w, bitmap->lock_h,
       get_glformat(lock_format, 0),
       data_size,
-      start_ptr);
+      ogl_bitmap->lock_buffer);
 
    e = glGetError();
    if (e) {
