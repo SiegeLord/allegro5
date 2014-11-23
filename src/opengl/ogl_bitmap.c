@@ -700,7 +700,7 @@ static ALLEGRO_LOCKED_REGION *ogl_lock_compressed_region(ALLEGRO_BITMAP *bitmap,
    int hc = h / block_width;
    int true_wc = ogl_bitmap->true_w / block_width;
    int true_hc = ogl_bitmap->true_h / block_width;
-   int gl_yc = true_hc - yc - hc;
+   int gl_yc = _al_get_least_multiple(bitmap->h, block_width) / block_width - yc - hc;
    
    if (flags & ALLEGRO_LOCK_WRITEONLY) {
       int pitch = wc * block_size;
@@ -820,7 +820,7 @@ static void ogl_unlock_compressed_region(ALLEGRO_BITMAP *bitmap)
    int block_width = al_get_pixel_block_width(lock_format);
    int data_size = bitmap->lock_h * bitmap->lock_w /
       (block_width * block_width) * block_size;
-   int gl_y = ogl_bitmap->true_h - bitmap->lock_y - bitmap->lock_h;
+   int gl_y = _al_get_least_multiple(bitmap->h, block_width) - bitmap->lock_y - bitmap->lock_h;
 
    if ((bitmap->lock_flags & ALLEGRO_LOCK_READONLY)) {
       goto EXIT;
