@@ -589,6 +589,100 @@ static void ogl_bitmap_pointer_changed(ALLEGRO_BITMAP *bitmap,
    }
 }
 
+static void ogl_flip_blocks(ALLEGRO_LOCKED_REGION *lr, int wc, int hc)
+{
+#define SWAP(x, y) do { unsigned char t = x; x = y; y = t; } while (0)
+   int x, y;
+   unsigned char* data = lr->data;
+   switch (lr->format) {
+      case ALLEGRO_PIXEL_FORMAT_RGBA_DXT1: {
+         for (y = 0; y < hc; y++) {
+            unsigned char* row = data;
+            for (x = 0; x < wc; x++) {
+               /* Skip color table */
+               row += 4;
+
+               /* Swap colors */
+               SWAP(row[0], row[3]);
+               SWAP(row[2], row[1]);
+
+               /* Skip bit-map */
+               row += 4;
+            }
+            data += lr->pitch;
+         }
+         break;
+      }
+      case ALLEGRO_PIXEL_FORMAT_RGBA_DXT3: {
+         for (y = 0; y < hc; y++) {
+            unsigned char* row = data;
+            for (x = 0; x < wc; x++) {
+               /* Swap alpha */
+               SWAP(row[0], row[6]);
+               SWAP(row[1], row[7]);
+               SWAP(row[2], row[4]);
+               SWAP(row[3], row[5]);
+
+               /* Skip alpha bit-map */
+               row += 8;
+
+               /* Skip color table */
+               row += 4;
+
+               /* Swap colors */
+               SWAP(row[0], row[3]);
+               SWAP(row[2], row[1]);
+
+               /* Skip bit-map */
+               row += 4;
+            }
+            data += lr->pitch;
+         }
+         break;
+      }
+      case ALLEGRO_PIXEL_FORMAT_RGBA_DXT5: {
+         for (y = 0; y < hc; y++) {
+            unsigned char* row = data;
+            for (x = 0; x < wc; x++) {
+               uint16_t bit_row0, bit_row1, bit_row2, bit_row3;
+
+               /* Skip the alpha table */
+               row += 2;
+
+               bit_row0 = (((uint16_t)row[0]) | (uint16_t)row[1] << 8) << 4;
+               bit_row1 = (((uint16_t)row[1]) | (uint16_t)row[2] << 8) >> 4;
+               bit_row2 = (((uint16_t)row[3]) | (uint16_t)row[4] << 8) << 4;
+               bit_row3 = (((uint16_t)row[4]) | (uint16_t)row[5] << 8) >> 4;
+
+               row[0] = (unsigned char)(bit_row3 & 0x00ff);
+               row[1] = (unsigned char)((bit_row2 & 0x00ff) | ((bit_row3 & 0xff00) >> 8));
+               row[2] = (unsigned char)((bit_row2 & 0xff00) >> 8);
+
+               row[3] = (unsigned char)(bit_row1 & 0x00ff);
+               row[4] = (unsigned char)((bit_row0 & 0x00ff) | ((bit_row1 & 0xff00) >> 8));
+               row[5] = (unsigned char)((bit_row0 & 0xff00) >> 8);
+
+               /* Skip the alpha bit-map */
+               row += 6;
+
+               /* Skip color table */
+               row += 4;
+
+               /* Swap colors */
+               SWAP(row[0], row[3]);
+               SWAP(row[2], row[1]);
+
+               /* Skip bit-map */
+               row += 4;
+            }
+            data += lr->pitch;
+         }
+         break;
+      }
+   }
+#undef SWAP
+}
+
 static ALLEGRO_LOCKED_REGION *ogl_lock_compressed_region(ALLEGRO_BITMAP *bitmap,
    int x, int y, int w, int h, int flags)
 {
@@ -705,6 +799,7 @@ static ALLEGRO_LOCKED_REGION *ogl_lock_compressed_region(ALLEGRO_BITMAP *bitmap,
    }
 
    if (ok) {
+      ogl_flip_blocks(&bitmap->locked_region, wc, hc);
       return &bitmap->locked_region;
    }
 
@@ -725,12 +820,14 @@ static void ogl_unlock_compressed_region(ALLEGRO_BITMAP *bitmap)
    int block_width = al_get_pixel_block_width(lock_format);
    int data_size = bitmap->lock_h * bitmap->lock_w /
       (block_width * block_width) * block_size;
-   int gl_y = _al_get_least_multiple(bitmap->h, block_width)
-      - bitmap->lock_y - bitmap->lock_h;
+   int gl_y = ogl_bitmap->true_h - bitmap->lock_y - bitmap->lock_h;
 
    if ((bitmap->lock_flags & ALLEGRO_LOCK_READONLY)) {
       goto EXIT;
    }
+
+   ogl_flip_blocks(&bitmap->locked_region, bitmap->lock_w / block_width,
+      bitmap->lock_h / block_width);
 
    disp = al_get_current_display();
 
