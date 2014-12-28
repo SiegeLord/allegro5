@@ -9,7 +9,7 @@ environment:
 
 install:
   - mkdir deps
-  - nuget install zlib-%al_toolset%-%al_arch% -Source https://ci.appveyor.com/nuget/zlib -OutputDirectory deps
+  - nuget install zlib -OutputDirectory deps
   - tree deps
 
 build_script:
