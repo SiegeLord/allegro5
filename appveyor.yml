@@ -6,10 +6,8 @@ install:
   - mkdir deps\include
   - mkdir deps\lib
   - nuget install freetype -OutputDirectory deps -ExcludeVersion
-  - tree deps
   - ps: move deps\freetype\build\native\include\* deps\include -force
   - ps: move deps\freetype\build\native\lib\Win32\v110\static\Release\freetype246.lib deps\lib\freetype.lib -force
-  - tree deps
 
 build_script:
   - mkdir build
@@ -18,6 +16,4 @@ build_script:
   - cmake --build . --config RelWithDebInfo
 
 test_script:
-  - tree tests
-  - tests\RelWithDebInfo\test_driver ..\tests\test_prim.ini > out.txt
-  - type out.txt
+  - tests\RelWithDebInfo\test_driver ..\tests\test_prim.ini > out.txt || type out.txt
