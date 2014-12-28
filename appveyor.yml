@@ -6,6 +6,7 @@ install:
   - mkdir deps\include
   - mkdir deps\lib
   - nuget install freetype -OutputDirectory deps -ExcludeVersion
+  - tree deps
   - ps: move freetype\build\native\include\* deps\include -force
   - ps: move freetype\build\native\lib\Win32\v110\static\Release\freetype246.lib deps\lib\freetype.lib -force
   - tree deps
