@@ -1,15 +1,13 @@
 version: 1.0.{build}
 clone_depth: 5
 
-environment:
-  matrix:
-    - al_arch: "x86"
-      al_toolset: "msvc12"
-      al_static_runtime: 0
-
 install:
   - mkdir deps
-  - nuget install zlib -OutputDirectory deps
+  - mkdir deps\include
+  - mkdir deps\lib
+  - nuget install freetype -OutputDirectory deps -ExcludeVersion
+  - ps: move freetype\build\native\include\* deps\include -force
+  - ps: move freetype\build\native\lib\Win32\v110\static\Release\freetype246.lib deps\lib\freetype.lib -force
   - tree deps
 
 build_script:
