@@ -17,3 +17,4 @@ build_script:
 
 test_script:
   - tests\RelWithDebInfo\test_driver ..\tests\test_prim.ini > out.txt || type out.txt
+  - type out.txt
