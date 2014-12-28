@@ -12,7 +12,7 @@ install:
 build_script:
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake .. -DSHARED=off
   - cmake --build . --config RelWithDebInfo
 
 test_script:
