@@ -1,10 +1,11 @@
 version: 1.0.{build}
 clone_depth: 5
 
-matrix:
-  - al_arch: "x86"
-    al_tools: "msvc12"
-    al_static_runtime: 0
+environment:
+  matrix:
+    - al_arch: "x86"
+      al_tools: "msvc12"
+      al_static_runtime: 0
 
 install:
   - mkdir deps
