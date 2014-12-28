@@ -16,5 +16,5 @@ build_script:
   - cmake --build . --config RelWithDebInfo
 
 test_script:
-  - tests\RelWithDebInfo\test_driver ..\tests\test_prim.ini > out.txt || type out.txt
+  - tests\RelWithDebInfo\test_driver --force-opengl ..\tests\test_prim.ini > out.txt || type out.txt
   - type out.txt
