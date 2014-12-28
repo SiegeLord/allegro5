@@ -4,12 +4,12 @@ clone_depth: 5
 environment:
   matrix:
     - al_arch: "x86"
-      al_tools: "msvc12"
+      al_toolset: "msvc12"
       al_static_runtime: 0
 
 install:
   - mkdir deps
-  - nuget install zlib -Source https://ci.appveyor.com/nuget/zlib -OutputDirectory deps
+  - nuget install zlib-%al_toolset%-%al_arch% -Source https://ci.appveyor.com/nuget/zlib -OutputDirectory deps
   - tree deps
 
 build_script:
