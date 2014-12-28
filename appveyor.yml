@@ -1,0 +1,21 @@
+version: 1.0.{build}
+clone_depth: 5
+
+matrix:
+  - al_arch: "x86"
+    al_tools: "msvc12"
+    al_static_runtime: 0
+
+install:
+  - mkdir deps
+  - nuget install zlib -Source https://ci.appveyor.com/nuget/zlib -OutputDirectory deps
+  - tree deps
+
+build_script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - cmake --build . --config RelWithDebInfo
+
+test_script:
+  - tests\test_driver ..\tests\test_prim.ini
