@@ -18,4 +18,6 @@ build_script:
   - cmake --build . --config RelWithDebInfo
 
 test_script:
-  - tests\test_driver ..\tests\test_prim.ini
+  - tree tests
+  - cd tests
+  - test_driver.exe ..\..\tests\test_prim.ini
