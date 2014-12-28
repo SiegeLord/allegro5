@@ -19,5 +19,4 @@ build_script:
 
 test_script:
   - tree tests
-  - cd tests
-  - test_driver.exe ..\..\tests\test_prim.ini
+  - tests\RelWithDebInfo\test_driver ..\tests\test_prim.ini
