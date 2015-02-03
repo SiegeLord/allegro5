@@ -61,8 +61,7 @@ static float get_scale(void)
    const ALLEGRO_TRANSFORM* t = al_get_current_transform();
    float scale_sq = DET2D(t);
    ALLEGRO_BITMAP* b = al_get_target_bitmap();
-   /* Memory bitmaps do not support projection transformations. */
-   if (!(al_get_bitmap_flags(b) & ALLEGRO_MEMORY_BITMAP)) {
+   if (b) {
       const ALLEGRO_TRANSFORM* p = al_get_current_projection_transform();
       /* Divide by 4.0f as the screen coordinates range from -1 to 1 on both axes. */
       scale_sq *= DET2D(p) * al_get_bitmap_width(b) * al_get_bitmap_height(b) / 4.0f;
