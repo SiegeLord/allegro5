@@ -79,6 +79,10 @@ void al_use_projection_transform(const ALLEGRO_TRANSFORM *trans)
    if (!target)
       return;
 
+   /* Memory bitmaps don't support custom projection transforms */
+   if (al_get_bitmap_flags(target) & ALLEGRO_MEMORY_BITMAP)
+      return;
+
    /* Changes to a back buffer should affect the front buffer, and vice versa.
     * Currently we rely on the fact that in the OpenGL drivers the back buffer
     * and front buffer bitmaps are exactly the same, and the DirectX driver

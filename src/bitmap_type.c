@@ -192,6 +192,15 @@ void al_convert_bitmap(ALLEGRO_BITMAP *bitmap)
    bitmap->inverse_transform = clone->inverse_transform;
    bitmap->inverse_transform_dirty = clone->inverse_transform_dirty;
 
+   /* Memory bitmaps do not support custom projection transforms,
+    * so reset it to the orthographic transform. */
+   if (new_bitmap_flags & ALLEGRO_MEMORY_BITMAP) {
+      al_identity_transform(&bitmap->bmp_proj_transform);
+      al_orthographic_transform(&bitmap->bmp_proj_transform, 0, 0, -1.0, bitmap->w, bitmap->h, 1.0);
+   } else {
+      bitmap->bmp_proj_transform = clone->bmp_proj_transform;
+   }
+
    /* If we just converted this bitmap, and the backing bitmap is the same
     * as the target's backing bitmap, then the viewports and transformations
     * will be messed up. Detect this, and just re-call al_set_target_bitmap
