@@ -150,7 +150,6 @@ void al_convert_bitmap(ALLEGRO_BITMAP *bitmap)
    int new_bitmap_flags = al_get_new_bitmap_flags();
    bool want_memory = (new_bitmap_flags & ALLEGRO_MEMORY_BITMAP) != 0;
    bool clone_memory;
-   ALLEGRO_DISPLAY *current_display = al_get_current_display();
    ALLEGRO_BITMAP *target_bitmap;
    
    bitmap_flags &= ~_ALLEGRO_INTERNAL_OPENGL;
