@@ -141,6 +141,13 @@ if(WANT_VIDEO)
     endif(SUPPORT_VIDEO)
 endif(WANT_VIDEO)
 
+if(WANT_CONTROLLER_DB)
+    add_subdirectory(controller_db)
+    set(SUPPORT_CONTROLLER_DB 1 PARENT_SCOPE)
+    set(CONTROLLER_DB_LINK_WITH ${CONTROLLER_DB_LINK_WITH} PARENT_SCOPE)
+    list(APPEND ADDON_PKG_CONFIG_FILES allegro_controller_db)
+endif(WANT_CONTROLLER_DB)
+
 add_subdirectory(main)
 # SUPPORT_MAIN and MAIN_LINK_WITH are spelt as such in this scope,
 # but are prefixed with ALLEGRO in the parent scope.

@@ -924,6 +924,8 @@ static BOOL CALLBACK joystick_enum_callback(LPCDIDEVICEINSTANCE lpddi, LPVOID pv
    joy->device = dinput_device;
    memcpy(&joy->guid, &lpddi->guidInstance, sizeof(GUID));
    memcpy(&joy->product_guid, &lpddi->guidProduct, sizeof(GUID));
+   memcpy(&joy->parent.info.guid.data, &lpddi->guidProduct, sizeof(joy->parent.info.guid.data));
+   _al_update_joystick_guid_string(&joy->parent);
 
    _al_sane_strncpy(joy->name, lpddi->tszInstanceName, sizeof(joy->name));
 

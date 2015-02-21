@@ -256,6 +256,8 @@ static void device_add_callback(
    IOHIDDeviceRef ref
 ) {
    int i;
+   uint32_t *guid32;
+   CFTypeRef refCF;
 
    (void)context;
    (void)result;
@@ -296,6 +298,42 @@ static void device_add_callback(
       sprintf(buf, "Stick %d", i);
       joy->parent.info.stick[i].name = buf;
    }
+
+    refCF = IOHIDDeviceGetProperty(ref, CFSTR(kIOHIDVendorIDKey));
+    if (refCF) {
+        CFNumberGetValue(refCF, kCFNumberSInt32Type, &joy->parent.info.guid.data[0]);
+    }
+
+    refCF = IOHIDDeviceGetProperty(ref, CFSTR(kIOHIDProductIDKey));
+    if (refCF) {
+        CFNumberGetValue(refCF, kCFNumberSInt32Type, &joy->parent.info.guid.data[8]);
+    }
+
+    /* Check to make sure we have a vendor and product ID */
+    guid32 = (uint32_t*)&joy->parent.info.guid.data[0];
+    if (!guid32[0] && !guid32[1]) {
+        const char *product = "Unidentified joystick";        
+
+        /* get device name */
+        refCF = IOHIDDeviceGetProperty(ref, CFSTR(kIOHIDProductKey));
+        if (!refCF) {
+            /* Maybe we can't get "AwesomeJoystick2000", but we can get "Logitech"? */
+            refCF = IOHIDDeviceGetProperty(ref, CFSTR(kIOHIDManufacturerKey));
+        }
+
+        if (refCF) {
+            product = CFStringGetCStringPtr(refCF, kCFStringEncodingUTF8);
+        }
+
+        /* If we don't have a vendor and product ID this is probably a Bluetooth device */
+        const uint16_t BUS_BLUETOOTH = 0x05;
+        uint16_t *guid16 = (uint16_t *)guid32;
+        *guid16++ = BUS_BLUETOOTH;
+        *guid16++ = 0;
+        _al_sane_strncpy( (char*)guid16, product, sizeof(joy->parent.info.guid.data) - 4);
+    }
+
+   _al_update_joystick_guid_string(&joy->parent);
 
    al_unlock_mutex(add_mutex);
 

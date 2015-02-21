@@ -8,6 +8,13 @@
    extern "C" {
 #endif
 
+#define ALLEGRO_JOYSTICK_GUID_LENGTH 16
+
+struct ALLEGRO_JOYSTICK_GUID
+{
+   uint8_t data[ALLEGRO_JOYSTICK_GUID_LENGTH];
+   char str[ALLEGRO_JOYSTICK_GUID_LENGTH*2 + 1];
+};
 
 typedef struct ALLEGRO_JOYSTICK_DRIVER
 {
@@ -67,6 +74,7 @@ typedef struct _AL_JOYSTICK_BUTTON_INFO
 /* information about an entire joystick */
 typedef struct _AL_JOYSTICK_INFO
 {
+   ALLEGRO_JOYSTICK_GUID guid;
    int num_sticks;
    int num_buttons;
    _AL_JOYSTICK_STICK_INFO stick[_AL_MAX_JOYSTICK_STICKS];
@@ -83,6 +91,7 @@ struct ALLEGRO_JOYSTICK
 };
 
 void _al_generate_joystick_event(ALLEGRO_EVENT *event);
+void _al_update_joystick_guid_string(ALLEGRO_JOYSTICK *joystick);
 
 #ifdef __cplusplus
    }

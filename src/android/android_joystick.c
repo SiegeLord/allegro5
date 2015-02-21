@@ -1,4 +1,4 @@
-#include "allegro5/allegro.h"
+F#include "allegro5/allegro.h"
 #include "allegro5/internal/aintern.h"
 #include "allegro5/internal/aintern_events.h"
 #include "allegro5/internal/aintern_joystick.h"
@@ -56,6 +56,7 @@ static bool andjoy_init_joystick(void)
     ALLEGRO_JOYSTICK_ANDROID **ptr;
     ALLEGRO_JOYSTICK *joy;
     int num;
+    const char *name_for_guid = "Android Accelerometer";
 
     accel->name = "Accelerometer";
 
@@ -70,6 +71,9 @@ static bool andjoy_init_joystick(void)
     joy->info.stick[0].axis[1].name = "Y";
     joy->info.stick[0].axis[2].name = "Z";
     joy->info.stick[0].flags = ALLEGRO_JOYFLAG_ANALOGUE;
+    memset(joy->info.parent.guid.data, 0, sizeof(joy->info.parent.guid.data));
+    _al_sane_strncpy(&joy->info.parent.guid.data[0], name_for_guid, sizeof(joy->info.parent.guid.data));
+    _al_update_joystick_guid_string(joy);
 
     ptr = _al_vector_alloc_back(&joysticks);
     *ptr = accel;

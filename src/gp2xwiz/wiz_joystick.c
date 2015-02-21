@@ -172,6 +172,9 @@ static void joywiz_fill_joy(void)
 	joy.info.button[8].name = "VolUp";
 	joy.info.button[9].name = "VolDown";
 
+    memset(joy.info.parent.guid.data, 0, sizeof(joy.info.parent.guid.data));
+    _al_update_joystick_guid_string(&joy);
+
 	joy.num = 0;
 }
 

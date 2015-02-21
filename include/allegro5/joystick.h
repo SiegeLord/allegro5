@@ -33,6 +33,7 @@
 /* Type: ALLEGRO_JOYSTICK
  */
 typedef struct ALLEGRO_JOYSTICK ALLEGRO_JOYSTICK;
+typedef struct ALLEGRO_JOYSTICK_GUID ALLEGRO_JOYSTICK_GUID;
 
 
 
@@ -68,6 +69,8 @@ AL_FUNC(int,            al_get_num_joysticks,   (void));
 AL_FUNC(ALLEGRO_JOYSTICK *, al_get_joystick,    (int joyn));
 AL_FUNC(void,           al_release_joystick,    (ALLEGRO_JOYSTICK *));
 AL_FUNC(bool,           al_get_joystick_active, (ALLEGRO_JOYSTICK *));
+AL_FUNC(ALLEGRO_JOYSTICK_GUID *, al_get_joystick_guid,   (ALLEGRO_JOYSTICK *));
+AL_FUNC(const char*,    al_get_joystick_guid_string,   (ALLEGRO_JOYSTICK *));
 AL_FUNC(const char*,    al_get_joystick_name,   (ALLEGRO_JOYSTICK *));
 
 AL_FUNC(int,            al_get_joystick_num_sticks, (ALLEGRO_JOYSTICK *));

@@ -136,6 +136,15 @@ static ALLEGRO_COND *hotplug_cond;
 static bool hotplug_ended = false;
 #endif
 
+#ifdef ALLEGRO_LITTLE_ENDIAN
+#define swap_le16(x) (x)
+#else
+uint16_t swap_le16( uint16_t x )
+{
+    return (( x << 8 ) | ( x >> 8 ));
+}
+#endif
+
 
 /* Return true if a joystick-related button or key:
  *
@@ -464,6 +473,7 @@ static void ljoy_scan(bool configure)
    int num;
    ALLEGRO_USTR *device_name;
    unsigned i;
+   struct input_id inpid;
 
    /* Clear mark bits. */
    for (i = 0; i < _al_vector_size(&joysticks); i++) {
@@ -520,6 +530,28 @@ static void ljoy_scan(bool configure)
 
       if (ioctl(fd, EVIOCGNAME(sizeof(joy->name)), joy->name) < 0)
          strcpy(joy->name, "Unknown");
+         
+      memset(&joy->parent.info.guid.data, 0, sizeof(joy->parent.info.guid.data));
+      
+      if (ioctl(fd, EVIOCGID, &inpid) >= 0) {
+         uint16_t *guid16 = (uint16_t*)&joy->parent.info.guid.data[0];
+        
+         *(guid16++) = swap_le16(inpid.bustype );
+         *(guid16++) = 0;
+        
+         if (inpid.vendor && inpid.product && inpid.version) {
+    	    *(guid16++) = swap_le16(inpid.vendor );
+            *(guid16++) = 0;
+    	    *(guid16++) = swap_le16(inpid.product );
+            *(guid16++) = 0;
+    	    *(guid16++) = swap_le16(inpid.version );
+            *(guid16++) = 0;
+         } else {
+            _al_sane_strncpy((char*)guid16, joy->name, sizeof(joy->parent.info.guid.data)-4);
+         }
+      }
+
+      _al_update_joystick_guid_string(&joy->parent);
 
       /* Map Linux input API axis and button numbers to ours, and fill in
        * information.

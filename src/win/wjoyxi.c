@@ -504,6 +504,9 @@ static void joyxi_init_joystick_info(ALLEGRO_JOYSTICK_XINPUT *xjoy)
 {
    int index, subdex;
    _AL_JOYSTICK_INFO *info = &xjoy->parent.info;
+   /* Set reserved guid for XInput devices */
+   _al_sane_strncpy((char*)info->guid.data, "xinput", sizeof(info->guid.data));
+   _al_update_joystick_guid_string(&xjoy->parent);
    /* Map xinput to 4 sticks: 2 thumb pads and 2 triggers. */
    info->num_sticks = 4;
    /* Map xinput to 14 buttons */

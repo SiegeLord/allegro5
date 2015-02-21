@@ -133,6 +133,21 @@ void _al_generate_joystick_event(ALLEGRO_EVENT *event)
 
 
 
+void _al_update_joystick_guid_string(ALLEGRO_JOYSTICK *joystick)
+{
+   int i = 0;
+   for ( i=0; i<ALLEGRO_JOYSTICK_GUID_LENGTH; ++i )
+   {
+	  int hi, lo;
+      hi = joystick->info.guid.data[i] / 16;
+	  lo = joystick->info.guid.data[i] % 16;
+	  joystick->info.guid.str[i*2]   = ( hi < 10 ) ? '0' + hi : 'a' + (hi-10);
+	  joystick->info.guid.str[i*2+1] = ( lo < 10 ) ? '0' + lo : 'a' + (lo-10);
+   }
+}
+
+
+
 /* Function: al_get_num_joysticks
  */
 int al_get_num_joysticks(void)
@@ -187,6 +202,28 @@ const char *al_get_joystick_name(ALLEGRO_JOYSTICK *joy)
    ASSERT(joy);
 
    return new_joystick_driver->get_name(joy);
+}
+
+
+
+/* Function: al_get_joystick_guid
+ */
+ALLEGRO_JOYSTICK_GUID *al_get_joystick_guid(ALLEGRO_JOYSTICK *joy)
+{
+   ASSERT(joy);
+
+   return &joy->info.guid;
+}
+
+
+
+/* Function: al_get_joystick_guid
+ */
+const char *al_get_joystick_guid_string(ALLEGRO_JOYSTICK *joy)
+{
+   ASSERT(joy);
+
+   return &joy->info.guid.str[0];
 }
 
 

@@ -18,6 +18,8 @@ static bool ijoy_init_joystick(void)
 {
     ALLEGRO_JOYSTICK_IPHONE *ijoy;
     ALLEGRO_JOYSTICK *joy;
+
+    const char *name_for_guid = "iPhone accelerometer";
     
     ijoy = &the_joystick;
     
@@ -33,6 +35,10 @@ static bool ijoy_init_joystick(void)
     joy->info.stick[0].axis[1].name = "Y";
     joy->info.stick[0].axis[2].name = "Z";
     joy->info.stick[0].flags = ALLEGRO_JOYFLAG_ANALOGUE;
+
+    memset(joy->info.parent.guid.data, 0, sizeof(joy->info.parent.guid.data));    
+    _al_sane_strncpy(&joy->info.parent.guid.data[0], name_for_guid, sizeof(joy->info.parent.guid.data));    
+    _al_update_joystick_guid_string(joy);
     
     // TODO: What's a good frequency to use here?
     _al_iphone_accelerometer_control(60);
