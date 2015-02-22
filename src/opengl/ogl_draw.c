@@ -486,13 +486,14 @@ static void ogl_update_transformation(ALLEGRO_DISPLAY* disp,
       glLoadMatrixf((float *)target->bmp_proj_transform.m);
       glMatrixMode(GL_MODELVIEW);
       glLoadMatrixf((float *)target->transform.m);
-      if (target->parent) {
-         ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_extra = target->parent->extra;
-         /* glViewport requires the bottom-left coordinate of the corner. */
-         glViewport(target->xofs, ogl_extra->true_h - (target->yofs + target->h), target->w, target->h);
-      } else {
-         glViewport(0, 0, target->w, target->h);
-      }
+   }
+
+   if (target->parent) {
+      ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_extra = target->parent->extra;
+      /* glViewport requires the bottom-left coordinate of the corner. */
+      glViewport(target->xofs, ogl_extra->true_h - (target->yofs + target->h), target->w, target->h);
+   } else {
+      glViewport(0, 0, target->w, target->h);
    }
 }
 
