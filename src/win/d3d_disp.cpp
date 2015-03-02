@@ -38,6 +38,7 @@
 
 #include "d3d.h"
 
+static void d3d_set_target_bitmap(ALLEGRO_DISPLAY *display, ALLEGRO_BITMAP *bitmap);
 static void d3d_update_transformation(ALLEGRO_DISPLAY* disp, ALLEGRO_BITMAP *target);
 
 // C++ needs to cast void pointers
@@ -49,8 +50,6 @@ static const char* _al_d3d_module_name = "d3d9.dll";
 ALLEGRO_DEBUG_CHANNEL("d3d")
 
 static ALLEGRO_DISPLAY_INTERFACE *vt = 0;
-
-static ALLEGRO_BITMAP *previous_target = NULL;
 
 static HMODULE _al_d3d_module = 0;
 
@@ -927,8 +926,6 @@ void _al_d3d_prepare_for_reset(ALLEGRO_DISPLAY_D3D *disp)
       (*d3d_release_callback)(al_display);
    }
 
-   previous_target = NULL;
-
    d3d_call_callbacks(&al_display->display_invalidated_callbacks, al_display);
 
    _al_d3d_release_default_pool_textures((ALLEGRO_DISPLAY *)disp);
@@ -1098,6 +1095,13 @@ static bool _al_d3d_reset_device(ALLEGRO_DISPLAY_D3D *d3d_display)
    d3d_display->device->BeginScene();
 
    d3d_reset_state(d3d_display);
+
+   /* Restore the target bitmap. */
+   if (d3d_display->target_bitmap) {
+      ALLEGRO_DISPLAY *display = (ALLEGRO_DISPLAY*)d3d_display;
+      d3d_set_target_bitmap(display, d3d_display->target_bitmap);
+      d3d_update_transformation(display, d3d_display->target_bitmap);
+   }
 
    al_unlock_mutex(_al_d3d_lost_device_mutex);
 
@@ -1490,11 +1494,6 @@ static void *d3d_display_thread_proc(void *arg)
       else if (hr == D3DERR_DEVICENOTRESET) {
          if (_al_d3d_reset_device(d3d_display)) {
             d3d_display->device_lost = false;
-            d3d_reset_state(d3d_display);
-            ALLEGRO_BITMAP* target_bitmap = al_get_target_bitmap();
-            if (target_bitmap) {
-               d3d_update_transformation(al_display, target_bitmap);
-            }
             _al_event_source_lock(&al_display->es);
             if (_al_event_source_needs_to_generate_event(&al_display->es)) {
                ALLEGRO_EVENT event;
@@ -1729,6 +1728,10 @@ static ALLEGRO_DISPLAY_D3D *d3d_create_display_internals(
    d3d_display->backbuffer_bmp.cb_excl = al_display->h;
    d3d_display->backbuffer_bmp.vt = (ALLEGRO_BITMAP_INTERFACE *)_al_bitmap_d3d_driver();
    d3d_display->backbuffer_bmp_extra.display = d3d_display;
+   d3d_display->target_bitmap = NULL;
+   al_identity_transform(&d3d_display->backbuffer_bmp.transform);
+   al_identity_transform(&d3d_display->backbuffer_bmp.bmp_proj_transform);
+   al_orthographic_transform(&d3d_display->backbuffer_bmp.bmp_proj_transform, 0, 0, -1.0, al_display->w, al_display->h, 1.0);
 
    /* Alpha blending is the default */
    d3d_display->device->SetRenderState(D3DRS_ALPHABLENDENABLE, true);
@@ -2160,6 +2163,8 @@ static bool d3d_acknowledge_resize(ALLEGRO_DISPLAY *d)
    disp->backbuffer_bmp.ct = 0;
    disp->backbuffer_bmp.cr_excl = w;
    disp->backbuffer_bmp.cb_excl = h;
+   al_identity_transform(&disp->backbuffer_bmp.bmp_proj_transform);
+   al_orthographic_transform(&disp->backbuffer_bmp.bmp_proj_transform, 0, 0, -1.0, w, h, 1.0);
 
    disp->do_reset = true;
    while (!disp->reset_done) {
@@ -2167,6 +2172,8 @@ static bool d3d_acknowledge_resize(ALLEGRO_DISPLAY *d)
    }
    disp->reset_done = false;
 
+   /* XXX: This is not very efficient, it'd probably be better to call
+    * the necessary functions directly. */
    al_store_state(&state, ALLEGRO_STATE_DISPLAY | ALLEGRO_STATE_TARGET_BITMAP);
    al_set_target_bitmap(al_get_backbuffer(d));
    al_set_clipping_rectangle(0, 0, d->w, d->h);
@@ -2231,7 +2238,6 @@ static bool d3d_resize_helper(ALLEGRO_DISPLAY *d, int width, int height)
 
       disp->suppress_lost_events = false;
 
-      al_set_target_bitmap(al_get_backbuffer(d));
       _al_d3d_recreate_bitmap_textures(disp);
 
       disp->backbuffer_bmp.w = width;
@@ -2380,9 +2386,10 @@ static ALLEGRO_BITMAP *d3d_create_bitmap(ALLEGRO_DISPLAY *d,
 void _al_d3d_destroy_bitmap(ALLEGRO_BITMAP *bitmap)
 {
    ASSERT(!al_is_sub_bitmap(bitmap));
+   ALLEGRO_DISPLAY_D3D *d3d_display = (ALLEGRO_DISPLAY_D3D*)_al_get_bitmap_display(bitmap);
 
-   if (bitmap == previous_target) {
-      previous_target = NULL;
+   if (bitmap == d3d_display->target_bitmap) {
+      d3d_display->target_bitmap = NULL;
    }
 
    ALLEGRO_BITMAP_EXTRA_D3D *d3d_bmp = get_extra(bitmap);
@@ -2426,20 +2433,19 @@ static void d3d_set_target_bitmap(ALLEGRO_DISPLAY *display, ALLEGRO_BITMAP *bitm
    d3d_target = get_extra(target);
    
    /* Release the previous target bitmap if it was not the backbuffer */
-
-   if (previous_target) {
+   if (d3d_display->target_bitmap && !get_extra(d3d_display->target_bitmap)->is_backbuffer) {
       ALLEGRO_BITMAP *parent;
-      if (previous_target->parent)
-         parent = previous_target->parent;
+      if (d3d_display->target_bitmap->parent)
+         parent = d3d_display->target_bitmap->parent;
       else
-         parent = previous_target;
+         parent = d3d_display->target_bitmap;
       ALLEGRO_BITMAP_EXTRA_D3D *e = get_extra(parent);
       if (e && e->render_target) {
          e->render_target->Release();
          e->render_target = NULL;
       }
-      previous_target = NULL;
    }
+   d3d_display->target_bitmap = NULL;
 
    /* Set the render target */
    if (d3d_target->is_backbuffer) {
@@ -2449,6 +2455,7 @@ static void d3d_set_target_bitmap(ALLEGRO_DISPLAY *display, ALLEGRO_BITMAP *bitm
          return;
       }
       d3d_target->render_target = d3d_display->render_target;
+      d3d_display->target_bitmap = bitmap;
    }
    else if (_al_pixel_format_is_compressed(al_get_bitmap_format(target))) {
       /* Do nothing, as it is impossible to directly draw to compressed textures via D3D.
@@ -2457,7 +2464,7 @@ static void d3d_set_target_bitmap(ALLEGRO_DISPLAY *display, ALLEGRO_BITMAP *bitm
    else {
       d3d_display = (ALLEGRO_DISPLAY_D3D *)display;
       if (_al_d3d_render_to_texture_supported()) {
-         previous_target = bitmap;
+         d3d_display->target_bitmap = bitmap;
          if (!d3d_target->video_texture) {
             /* This can happen if the user tries to set the target bitmap as
              * the device is lost, before the DISPLAY_LOST event is received.
@@ -2771,11 +2778,11 @@ static void d3d_update_transformation(ALLEGRO_DISPLAY* disp, ALLEGRO_BITMAP *tar
    if (disp->flags & ALLEGRO_PROGRAMMABLE_PIPELINE) {
 #ifdef ALLEGRO_CFG_SHADER_HLSL
       LPD3DXEFFECT effect = d3d_disp->effect;
+      ALLEGRO_TRANSFORM projview;
+      al_copy_transform(&projview, &target->transform);
+      al_compose_transform(&projview, &proj);
+      al_copy_transform(&disp->projview_transform, &projview);
       if (effect) {
-         ALLEGRO_TRANSFORM projview;
-         al_copy_transform(&projview, &target->transform);
-         al_compose_transform(&projview, &proj);
-         al_copy_transform(&disp->projview_transform, &projview);
          _al_hlsl_set_projview_matrix(effect, &projview);
       }
 #endif

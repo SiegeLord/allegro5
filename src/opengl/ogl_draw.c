@@ -470,12 +470,12 @@ static void ogl_update_transformation(ALLEGRO_DISPLAY* disp,
    if (disp->flags & ALLEGRO_PROGRAMMABLE_PIPELINE) {
 #ifdef ALLEGRO_CFG_SHADER_GLSL
       GLint loc = disp->ogl_extras->varlocs.projview_matrix_loc;
+      ALLEGRO_TRANSFORM projview;
+      al_copy_transform(&projview, &target->transform);
+      al_compose_transform(&projview, &target->bmp_proj_transform);
+      al_copy_transform(&disp->projview_transform, &projview);
 
       if (disp->ogl_extras->program_object > 0 && loc >= 0) {
-         ALLEGRO_TRANSFORM projview;
-         al_copy_transform(&projview, &target->transform);
-         al_compose_transform(&projview, &target->bmp_proj_transform);
-         al_copy_transform(&disp->projview_transform, &projview);
          _al_glsl_set_projview_matrix(loc, &disp->projview_transform);
       }
 #endif

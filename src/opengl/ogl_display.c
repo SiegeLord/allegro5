@@ -243,6 +243,7 @@ ALLEGRO_BITMAP* _al_ogl_create_backbuffer(ALLEGRO_DISPLAY *disp)
    backbuffer->ct = 0;
    backbuffer->cr_excl = disp->w;
    backbuffer->cb_excl = disp->h;
+   al_identity_transform(&backbuffer->transform);
    al_identity_transform(&backbuffer->bmp_proj_transform);
    al_orthographic_transform(&backbuffer->bmp_proj_transform, 0, 0, -1.0, disp->w, disp->h, 1.0);
 
