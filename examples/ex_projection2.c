@@ -33,9 +33,11 @@ static void draw_pyramid(ALLEGRO_BITMAP* texture, float x, float y, float z, flo
    al_draw_indexed_prim(vtx, NULL, texture, indices, 12, ALLEGRO_PRIM_TRIANGLE_LIST);
 }
 
-static void set_perspective_transform(float aspect_ratio)
+static void set_perspective_transform(ALLEGRO_BITMAP* bmp)
 {
    ALLEGRO_TRANSFORM p;
+   float aspect_ratio = (float)al_get_bitmap_height(bmp) / al_get_bitmap_width(bmp);
+   al_set_target_bitmap(bmp);
    al_identity_transform(&p);
    al_perspective_transform(&p, -1, aspect_ratio, 1, 1, -aspect_ratio, 1000);
    al_use_projection_transform(&p);
@@ -85,20 +87,18 @@ int main(int argc, char **argv)
       abort_example("Error creating display\n");
    }
    al_set_window_constraints(display, 256, 512, 0, 0);
-   set_perspective_transform((float)al_get_display_height(display) / al_get_display_width(display));
+   set_perspective_transform(al_get_backbuffer(display));
 
    /* This bitmap is a sub-bitmap of the display, and has a perspective transformation. */
    display_sub_persp = al_create_sub_bitmap(al_get_backbuffer(display), 0, 0, 256, 256);
-   al_set_target_bitmap(display_sub_persp);
-   set_perspective_transform(1.0);
+   set_perspective_transform(display_sub_persp);
 
    /* This bitmap is a sub-bitmap of the display, and has a orthographic transformation. */
    display_sub_ortho = al_create_sub_bitmap(al_get_backbuffer(display), 0, 0, 256, 512);
 
    /* This bitmap has a perspective transformation, purposefully non-POT */
    buffer = al_create_bitmap(200, 200);
-   al_set_target_bitmap(buffer);
-   set_perspective_transform(1.0);
+   set_perspective_transform(buffer);
 
    timer = al_create_timer(1.0 / 60);
    font = al_create_builtin_font();
@@ -127,8 +127,7 @@ int main(int argc, char **argv)
             break;
          case ALLEGRO_EVENT_DISPLAY_RESIZE:
             al_acknowledge_resize(display);
-            al_set_target_backbuffer(display);
-            set_perspective_transform((float)al_get_display_height(display) / al_get_display_width(display));
+            set_perspective_transform(al_get_backbuffer(display));
             break;
          case ALLEGRO_EVENT_KEY_DOWN:
             switch (event.keyboard.keycode) {
@@ -138,6 +137,7 @@ int main(int argc, char **argv)
                case ALLEGRO_KEY_SPACE:
                   fullscreen = !fullscreen;
                   al_set_display_flag(display, ALLEGRO_FULLSCREEN_WINDOW, fullscreen);
+                  set_perspective_transform(al_get_backbuffer(display));
                   break;
             }
             break;
