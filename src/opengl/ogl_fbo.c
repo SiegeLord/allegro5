@@ -292,11 +292,6 @@ static void setup_fbo_backbuffer(ALLEGRO_DISPLAY *display,
    {
       _al_ogl_bind_framebuffer(0);
    }
-
-#ifndef ALLEGRO_IPHONE
-#else
-   _al_iphone_setup_opengl_view(display, false);
-#endif
 }
 
 
