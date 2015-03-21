@@ -558,6 +558,8 @@ static ALLEGRO_DISPLAY *android_create_display(int w, int h)
    _al_android_clear_current(_al_android_get_jnienv(), d);
    _al_android_make_current(_al_android_get_jnienv(), d);
 
+   _al_ogl_setup_gl(display);
+
    /* Don't need to repeat what this does */
    android_set_display_option(display, ALLEGRO_SUPPORTED_ORIENTATIONS,
       al_get_new_display_option(ALLEGRO_SUPPORTED_ORIENTATIONS, NULL));

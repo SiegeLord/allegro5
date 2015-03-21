@@ -497,7 +497,6 @@ static void ogl_unlock_region_bb_proxy(ALLEGRO_BITMAP *bitmap,
       if (held) {
          al_hold_bitmap_drawing(false);
       }
-      /* Projection transform is currently per-display. */
       al_store_state(&state0, ALLEGRO_STATE_TARGET_BITMAP |
          ALLEGRO_STATE_TRANSFORM | ALLEGRO_STATE_BLENDER);
       {

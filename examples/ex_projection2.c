@@ -56,6 +56,7 @@ int main(int argc, char **argv)
    bool redraw = false;
    bool quit = false;
    bool fullscreen = false;
+   bool background = false;
    int display_flags = ALLEGRO_RESIZABLE;
    float theta = 0;
 
@@ -145,9 +146,18 @@ int main(int argc, char **argv)
             redraw = true;
             theta = fmod(theta + 0.05, 2 * ALLEGRO_PI);
             break;
+         case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
+            background = true;
+            al_acknowledge_drawing_halt(event.display.source);
+            al_stop_timer(timer);
+            break;
+         case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
+            background = false;
+            al_start_timer(timer);
+            break;
       }
 
-      if (redraw && al_is_event_queue_empty(queue)) {
+      if (!background && redraw && al_is_event_queue_empty(queue)) {
          al_set_target_backbuffer(display);
          al_set_render_state(ALLEGRO_DEPTH_TEST, 1);
          al_clear_to_color(al_map_rgb_f(0, 0, 0));

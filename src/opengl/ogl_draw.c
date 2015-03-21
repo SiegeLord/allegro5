@@ -479,9 +479,7 @@ static void ogl_update_transformation(ALLEGRO_DISPLAY* disp,
          _al_glsl_set_projview_matrix(loc, &disp->projview_transform);
       }
 #endif
-   }
-   else
-   {
+   } else {
       glMatrixMode(GL_PROJECTION);
       glLoadMatrixf((float *)target->bmp_proj_transform.m);
       glMatrixMode(GL_MODELVIEW);
