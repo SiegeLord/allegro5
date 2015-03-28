@@ -252,6 +252,8 @@ ALLEGRO_BITMAP* _al_ogl_create_backbuffer(ALLEGRO_DISPLAY *disp)
       _al_pixel_format_name(al_get_bitmap_format(backbuffer)));
 
    ogl_backbuffer = backbuffer->extra;
+   ogl_backbuffer->true_w = disp->w;
+   ogl_backbuffer->true_h = disp->h;
    ogl_backbuffer->is_backbuffer = 1;
    backbuffer->_display = disp;
 

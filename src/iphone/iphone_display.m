@@ -29,19 +29,13 @@ void _al_iphone_setup_opengl_view(ALLEGRO_DISPLAY *d, bool manage_backbuffer)
    h = d->h;
 
    _al_iphone_reset_framebuffer(d);
-   glViewport(0, 0, w, h);
 
    _screen_w = w;
    _screen_h = h;
 
-   if (manage_backbuffer) {
-      _al_ogl_setup_gl(d);
-   }
-   else {
-      //al_identity_transform(&d->projview_transform);
-      //al_orthographic_transform(&d->proj_transform, 0, 0, -1, d->w, d->h, 1);
-      //d->vt->set_projection(d);
-   }
+  if (manage_backbuffer) {
+     _al_ogl_setup_gl(d);
+  }
 }
 
 void _al_iphone_translate_from_screen(ALLEGRO_DISPLAY *d, int *x, int *y)
