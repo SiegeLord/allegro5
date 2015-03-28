@@ -2767,8 +2767,8 @@ static void d3d_update_transformation(ALLEGRO_DISPLAY* disp, ALLEGRO_BITMAP *tar
    /*
     * Shift by half a pixel to make the output match the OpenGL output.
     * Don't shift the actual proj_transform because if the user grabs it via
-    * al_get_projection_transform() and then sends it to
-    * al_set_projection_transform() the shift will be applied twice.
+    * al_get_current_projection_transform() and then sends it to
+    * al_use_projection_transform() the shift will be applied twice.
     */
    al_translate_transform(&fix_d3d, -1.0 / al_get_bitmap_width(target),
                           1.0 / al_get_bitmap_height(target));

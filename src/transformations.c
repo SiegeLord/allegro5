@@ -117,6 +117,18 @@ const ALLEGRO_TRANSFORM *al_get_current_transform(void)
    return &target->transform;
 }
 
+/* Function: al_get_current_projection_transform
+ */
+const ALLEGRO_TRANSFORM *al_get_current_projection_transform(void)
+{
+   ALLEGRO_BITMAP *target = al_get_target_bitmap();
+
+   if (!target)
+      return NULL;
+
+   return &target->bmp_proj_transform;
+}
+
 /* Function: al_get_current_inverse_transform
  */
 const ALLEGRO_TRANSFORM *al_get_current_inverse_transform(void)
@@ -467,19 +479,6 @@ void al_perspective_transform(ALLEGRO_TRANSFORM *trans,
    tmp.m[3][3] = 0;
 
    al_compose_transform(trans, &tmp);
-}
-
-
-/* Function: al_get_current_projection_transform
- */
-const ALLEGRO_TRANSFORM *al_get_current_projection_transform(void)
-{
-   ALLEGRO_BITMAP *target = al_get_target_bitmap();
-
-   if (!target)
-      return NULL;
-
-   return &target->bmp_proj_transform;
 }
 
 /* Function: al_horizontal_shear_transform
