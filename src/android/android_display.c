@@ -352,7 +352,7 @@ static void _al_android_resize_display(ALLEGRO_DISPLAY_ANDROID *d,
    display->h = height;
 
    ALLEGRO_DEBUG("resize backbuffer");
-   _al_ogl_resize_backbuffer(display->ogl_extras->backbuffer, width, height);
+   _al_ogl_setup_gl(display);
 
    if (emitted_event) {
       d->resize_acknowledge2 = true;
@@ -558,8 +558,6 @@ static ALLEGRO_DISPLAY *android_create_display(int w, int h)
    _al_android_clear_current(_al_android_get_jnienv(), d);
    _al_android_make_current(_al_android_get_jnienv(), d);
 
-   _al_ogl_setup_gl(display);
-
    /* Don't need to repeat what this does */
    android_set_display_option(display, ALLEGRO_SUPPORTED_ORIENTATIONS,
       al_get_new_display_option(ALLEGRO_SUPPORTED_ORIENTATIONS, NULL));
@@ -688,8 +686,6 @@ static bool android_acknowledge_resize(ALLEGRO_DISPLAY *dpy)
 
    ALLEGRO_DEBUG("acquire context");
    _al_android_make_current(_al_android_get_jnienv(), d);
-
-   _al_ogl_setup_gl(dpy);
 
    ALLEGRO_DEBUG("done");
    return true;
@@ -839,10 +835,11 @@ static void android_acknowledge_drawing_resume(ALLEGRO_DISPLAY *dpy)
       dpy->default_shader = _al_create_default_shader(dpy->flags);
    }
 
-   _al_ogl_setup_gl(dpy);
-
    // Bitmaps can still have stale shaders attached.
    _al_glsl_unuse_shaders();
+
+   // Restore the transformations.
+   dpy->vt->update_transformation(dpy, al_get_target_bitmap());
 
    // Restore bitmaps
    // have to get this because new bitmaps could be created below

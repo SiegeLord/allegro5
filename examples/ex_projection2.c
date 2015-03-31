@@ -148,11 +148,13 @@ int main(int argc, char **argv)
             break;
          case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
             background = true;
-            al_acknowledge_drawing_halt(event.display.source);
+            al_acknowledge_drawing_halt(display);
             al_stop_timer(timer);
             break;
          case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
             background = false;
+            al_acknowledge_drawing_resume(display);
+            set_perspective_transform(al_get_backbuffer(display));
             al_start_timer(timer);
             break;
       }
