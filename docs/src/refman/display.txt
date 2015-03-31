@@ -655,9 +655,7 @@ See also: [ALLEGRO_EVENT_DISPLAY_HALT_DRAWING]
 
 ### API: al_acknowledge_drawing_resume
 
-Call this in response to the [ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING] event. This
-resets the projection transform of the backbuffer to the default orthographic
-transform.
+Call this in response to the [ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING] event.
 
 Since: 5.1.1
 

@@ -154,7 +154,6 @@ int main(int argc, char **argv)
          case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
             background = false;
             al_acknowledge_drawing_resume(display);
-            set_perspective_transform(al_get_backbuffer(display));
             al_start_timer(timer);
             break;
       }

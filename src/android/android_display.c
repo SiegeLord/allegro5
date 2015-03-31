@@ -133,9 +133,6 @@ JNI_FUNC(void, AllegroSurface, nativeOnChange, (JNIEnv *env, jobject obj,
       d->surface_object = (*env)->NewGlobalRef(env, obj);
    }
 
-   display->w = width;
-   display->h = height;
-
    bool ret = _al_android_init_display(env, d);
    if (!ret && d->first_run) {
       al_broadcast_cond(d->cond);
@@ -178,6 +175,11 @@ JNI_FUNC(void, AllegroSurface, nativeOnChange, (JNIEnv *env, jobject obj,
    }
 
    al_unlock_mutex(d->mutex);
+
+   /* Send a resize event to signify that the display may have changed sizes. */
+   if (!d->first_run) {
+      _al_android_resize_display(d, width, height);
+   }
 }
 
 JNI_FUNC(void, AllegroSurface, nativeOnJoystickAxis, (JNIEnv *env, jobject obj,
