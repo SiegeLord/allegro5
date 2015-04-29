@@ -881,8 +881,8 @@ static void osx_get_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
       screen_scale_factor = [screen backingScaleFactor];
    }
 #endif
-   rc.size.width /= scale_factor;
-   rc.size.height /= scale_factor;
+   rc.size.width /= screen_scale_factor;
+   rc.size.height /= screen_scale_factor;
    [win initWithContentRect: rc
                styleMask: mask
                 backing: NSBackingStoreBuffered
@@ -942,8 +942,8 @@ static void osx_get_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
       NSPoint origin;
 
       /* We need to modify the y coordinate, cf. set_window_position */
-      origin.x = sc.origin.x + new_window_pos_x / scale_factor;
-      origin.y = sc.origin.y + sc.size.height - rc.size.height - new_window_pos_y / scale_factor;
+      origin.x = sc.origin.x + new_window_pos_x / screen_scale_factor;
+      origin.y = sc.origin.y + sc.size.height - rc.size.height - new_window_pos_y / screen_scale_factor;
       [win setFrameOrigin: origin];
    }
    else {
