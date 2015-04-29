@@ -875,6 +875,14 @@ static void osx_get_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
    } else {
       screen = [NSScreen mainScreen];
    }
+   float screen_scale_factor = 1.0;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+   if ([screen respondsToSelector:@selector(backingScaleFactor)]) {
+      screen_scale_factor = [screen backingScaleFactor];
+   }
+#endif
+   rc.size.width /= scale_factor;
+   rc.size.height /= scale_factor;
    [win initWithContentRect: rc
                styleMask: mask
                 backing: NSBackingStoreBuffered
@@ -901,6 +909,11 @@ static void osx_get_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
    [view setAllegroDisplay: &dpy->parent];
    [view setOpenGLContext: dpy->ctx];
    [view setPixelFormat: fmt];
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+   if ([view respondsToSelector:@selector(setWantsBestResolutionOpenGLSurface:)]) {
+      [view setWantsBestResolutionOpenGLSurface:YES];
+   }
+#endif
    /* Realize the window on the main thread */
    [win setContentView: view];
    [win setDelegate: view];
@@ -929,8 +942,8 @@ static void osx_get_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
       NSPoint origin;
 
       /* We need to modify the y coordinate, cf. set_window_position */
-      origin.x = sc.origin.x + new_window_pos_x;
-      origin.y = sc.origin.y + sc.size.height - rc.size.height - new_window_pos_y;
+      origin.x = sc.origin.x + new_window_pos_x / scale_factor;
+      origin.y = sc.origin.y + sc.size.height - rc.size.height - new_window_pos_y / scale_factor;
       [win setFrameOrigin: origin];
    }
    else {
