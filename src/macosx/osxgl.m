@@ -1826,7 +1826,7 @@ static bool resize_display_win(ALLEGRO_DISPLAY *d, int w, int h)
    NSRect current = [window frame];
    NSRect content = NSMakeRect(0.0f, 0.0f, (float) w, (float) h);
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
-   content = [window convertRectToBacking: content];
+   content = [window convertRectFromBacking: content];
 #endif
 
    w = _ALLEGRO_MAX(w, MINIMUM_WIDTH);
