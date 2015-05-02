@@ -149,6 +149,7 @@ ALLEGRO_DISPLAY_INTERFACE* _al_osx_get_display_driver_fs(void);
 static NSOpenGLContext* osx_create_shareable_context(NSOpenGLPixelFormat* fmt, unsigned int* group);
 static bool set_display_flag(ALLEGRO_DISPLAY *display, int flag, bool onoff);
 
+
 static void clear_to_black(NSOpenGLContext *context)
 {
    /* Clear and flush (for double buffering) */
@@ -288,6 +289,16 @@ void _al_osx_mouse_was_installed(BOOL install) {
 }
 
 @implementation ALOpenGLView
+
+-(void) prepareOpenGL
+{
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+   if ([self respondsToSelector:@selector(setWantsBestResolutionOpenGLSurface:)]) {
+      [self setWantsBestResolutionOpenGLSurface:YES];
+   }
+#endif
+}
+
 /* setDisplay:
 * Set the display this view is associated with
 */
@@ -909,11 +920,7 @@ static void osx_get_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
    [view setAllegroDisplay: &dpy->parent];
    [view setOpenGLContext: dpy->ctx];
    [view setPixelFormat: fmt];
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
-   if ([view respondsToSelector:@selector(setWantsBestResolutionOpenGLSurface:)]) {
-      [view setWantsBestResolutionOpenGLSurface:YES];
-   }
-#endif
+
    /* Realize the window on the main thread */
    [win setContentView: view];
    [win setDelegate: view];
@@ -956,6 +963,7 @@ static void osx_get_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
       origin.y = sc.origin.y + sc.size.height/2 - rc.size.height/2;
       [win setFrameOrigin: origin];
    }
+
    [win makeKeyAndOrderFront:self]; 
    if (!(mask & NSBorderlessWindowMask)) [win makeMainWindow];
    [fmt release];
@@ -1793,6 +1801,9 @@ static bool acknowledge_resize_display_win(ALLEGRO_DISPLAY *d)
    NSWindow* window = dpy->win;
    NSRect frame = [window frame];
    NSRect content = [window contentRectForFrameRect: frame];
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+   content = [window convertRectToBacking: content];
+#endif
 
    d->w = NSWidth(content);
    d->h = NSHeight(content);
@@ -1813,6 +1824,11 @@ static bool resize_display_win(ALLEGRO_DISPLAY *d, int w, int h)
    ALLEGRO_DISPLAY_OSX_WIN* dpy = (ALLEGRO_DISPLAY_OSX_WIN*) d;
    NSWindow* window = dpy->win;
    NSRect current = [window frame];
+   NSRect content = NSMakeRect(0.0f, 0.0f, (float) w, (float) h);
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+   content = [window convertRectToBacking: content];
+#endif
+
    w = _ALLEGRO_MAX(w, MINIMUM_WIDTH);
    h = _ALLEGRO_MAX(h, MINIMUM_HEIGHT);
 
@@ -1829,7 +1845,7 @@ static bool resize_display_win(ALLEGRO_DISPLAY *d, int w, int h)
       h = d->max_h;
    }
 
-   NSRect rc = [window frameRectForContentRect: NSMakeRect(0.0f, 0.0f, (float) w, (float) h)];
+   NSRect rc = [window frameRectForContentRect: content];
    rc.origin = current.origin;
 
    /* Don't resize a fullscreen window */

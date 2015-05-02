@@ -90,15 +90,16 @@ static ALLEGRO_MOUSE* osx_get_mouse(void)
 void _al_osx_mouse_generate_event(NSEvent* evt, ALLEGRO_DISPLAY* dpy)
 {
 	NSPoint pos;
-	int type, b_change = 0, dx = 0, dy = 0, dz = 0, dw = 0, b = 0;
-        float pressure = 0.0;
+	int type, b_change = 0, b = 0;
+    float pressure = 0.0;
+    float dx = 0, dy = 0, dz = 0, dw = 0;
 	switch ([evt type])
 	{
 		case NSMouseMoved:
 			type = ALLEGRO_EVENT_MOUSE_AXES;
 			dx = [evt deltaX];
 			dy = [evt deltaY];
-         pressure = [evt pressure];
+            pressure = [evt pressure];
 			break;
 		case NSLeftMouseDragged:
 		case NSRightMouseDragged:
@@ -107,7 +108,7 @@ void _al_osx_mouse_generate_event(NSEvent* evt, ALLEGRO_DISPLAY* dpy)
 			b = [evt buttonNumber]+1;
 			dx = [evt deltaX];
 			dy = [evt deltaY];
-         pressure = [evt pressure];
+            pressure = [evt pressure];
 			break;
 		case NSLeftMouseDown:
 		case NSRightMouseDown:
@@ -116,7 +117,7 @@ void _al_osx_mouse_generate_event(NSEvent* evt, ALLEGRO_DISPLAY* dpy)
 			b = [evt buttonNumber]+1;
 			b_change = 1;
 			osx_mouse.state.buttons |= (1 << (b-1));
-         pressure = [evt pressure];
+            pressure = [evt pressure];
 			break;
 		case NSLeftMouseUp:
 		case NSRightMouseUp:
@@ -125,7 +126,7 @@ void _al_osx_mouse_generate_event(NSEvent* evt, ALLEGRO_DISPLAY* dpy)
 			b = [evt buttonNumber]+1;
 			b_change = 1;
 			osx_mouse.state.buttons &= ~(1 << (b-1));
-                        pressure = [evt pressure];
+            pressure = [evt pressure];
 			break;
 		case NSScrollWheel:
 			type = ALLEGRO_EVENT_MOUSE_AXES;
@@ -152,21 +153,30 @@ void _al_osx_mouse_generate_event(NSEvent* evt, ALLEGRO_DISPLAY* dpy)
 			return;
 	}
 	pos = [evt locationInWindow];
-	BOOL within = true;			
+	BOOL within = true;
+    float scaling_factor = 1.0;
 	if ([evt window])
 	{
 		NSRect frm = [[[evt window] contentView] frame];
 		within = NSMouseInRect(pos, frm, NO);
 		// Y-coordinates in OS X start from the bottom.
 		pos.y = NSHeight(frm) - pos.y;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+        scaling_factor = [[[evt window] contentView] backingScaleFactor];
+#endif
 	}
 	else 
 	{
-      pos.y = [[NSScreen mainScreen] frame].size.height - pos.y;
+        pos.y = [[NSScreen mainScreen] frame].size.height - pos.y;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+        scaling_factor = [[NSScreen mainScreen] backingScaleFactor];
+#endif
 	}
+    dx *= scaling_factor;
+    dy *= scaling_factor;
 	if (osx_mouse.warped) {
-           dx = -osx_mouse.warped_x;
-           dy = -osx_mouse.warped_y;
+           /*dx = -osx_mouse.warped_x;
+           dy = -osx_mouse.warped_y;*/
            osx_mouse.warped = FALSE;
 	}
 	_al_event_source_lock(&osx_mouse.parent.es);
@@ -181,8 +191,8 @@ void _al_osx_mouse_generate_event(NSEvent* evt, ALLEGRO_DISPLAY* dpy)
 		mouse_event->timestamp = al_get_time();
                 mouse_event->display = dpy;
 		mouse_event->button = b;
-		mouse_event->x = pos.x;
-		mouse_event->y = pos.y; 
+		mouse_event->x = pos.x * scaling_factor;
+		mouse_event->y = pos.y * scaling_factor;
 		mouse_event->z = osx_mouse.z_axis;
 		mouse_event->w = osx_mouse.w_axis;
 		mouse_event->dx = dx;
@@ -197,7 +207,7 @@ void _al_osx_mouse_generate_event(NSEvent* evt, ALLEGRO_DISPLAY* dpy)
 	osx_mouse.state.y = pos.y;
 	osx_mouse.state.w = osx_mouse.w_axis;
 	osx_mouse.state.z = osx_mouse.z_axis;
-        osx_mouse.state.pressure = pressure;
+    osx_mouse.state.pressure = pressure;
 	_al_event_source_unlock(&osx_mouse.parent.es);
 }
 
@@ -323,14 +333,23 @@ static bool osx_set_mouse_xy(ALLEGRO_DISPLAY *dpy_, int x, int y)
         
         if ((CGGetDisplaysWithRect(rect, 16, displays, &displayCount) == 0) && (displayCount >= 1))
         	display = displays[0];
-        pos.x = content.origin.x + x;
-        pos.y = rect.size.height - content.origin.y - content.size.height + y;
+        
+        CGPoint point_pos = CGPointMake(x, y);
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+        point_pos = [[window contentView] convertPointFromBacking: point_pos];
+#endif
+        pos.x = content.origin.x + point_pos.x;
+        pos.y = rect.size.height - content.origin.y - content.size.height + point_pos.y;
     }
     else {
         if (dpy)
             display = dpy->display_id;
-        pos.x = x;
-        pos.y = y;
+        float scaling_factor = 1.0;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+        scaling_factor = [[NSScreen mainScreen] backingScaleFactor];
+#endif
+        pos.x = x / scaling_factor;
+        pos.y = y / scaling_factor;
     }
     
     _al_event_source_lock(&osx_mouse.parent.es);
@@ -349,7 +368,7 @@ static bool osx_set_mouse_xy(ALLEGRO_DISPLAY *dpy_, int x, int y)
         mouse_event->dx = x - osx_mouse.state.x;
         mouse_event->dy = y - osx_mouse.state.y;
         mouse_event->dz = 0;
-	mouse_event->pressure = osx_mouse.state.pressure;
+        mouse_event->pressure = osx_mouse.state.pressure;
         if (mouse_event->dx || mouse_event->dy) {
            osx_mouse.warped = TRUE;
            osx_mouse.warped_x = mouse_event->dx;
