@@ -148,6 +148,7 @@ ALLEGRO_DISPLAY_INTERFACE* _al_osx_get_display_driver_win(void);
 ALLEGRO_DISPLAY_INTERFACE* _al_osx_get_display_driver_fs(void);
 static NSOpenGLContext* osx_create_shareable_context(NSOpenGLPixelFormat* fmt, unsigned int* group);
 static bool set_display_flag(ALLEGRO_DISPLAY *display, int flag, bool onoff);
+static bool resize_display_win(ALLEGRO_DISPLAY *d, int w, int h);
 
 
 static void clear_to_black(NSOpenGLContext *context)
@@ -474,15 +475,51 @@ void _al_osx_mouse_was_installed(BOOL install) {
    _al_event_source_unlock(src);
    return NO;
 }
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1074
+-(void) viewDidChangeBackingProperties
+{
+   [super viewDidChangeBackingProperties];
+   if (!(al_get_display_flags(dpy_ptr) & ALLEGRO_RESIZABLE) &&
+       dpy_ptr->ogl_extras) {
+      resize_display_win(dpy_ptr, al_get_display_width(dpy_ptr), al_get_display_height(dpy_ptr));
+   }
+   else {
+      ALLEGRO_DISPLAY_OSX_WIN* dpy =  (ALLEGRO_DISPLAY_OSX_WIN*) dpy_ptr;
+      NSWindow *window = dpy->win;
+      NSRect rc = [window frame];
+      NSRect content = [window contentRectForFrameRect: rc];
+      content = [self convertRectToBacking: content];
+      ALLEGRO_EVENT_SOURCE *es = &dpy->parent.es;
+      
+      _al_event_source_lock(es);
+      if (_al_event_source_needs_to_generate_event(es)) {
+         ALLEGRO_EVENT event;
+         event.display.type = ALLEGRO_EVENT_DISPLAY_RESIZE;
+         event.display.timestamp = al_get_time();
+         event.display.width = NSWidth(content);
+         event.display.height = NSHeight(content);
+         _al_event_source_emit_event(es, &event);
+         ALLEGRO_INFO("Window finished resizing");
+      }
+      _al_event_source_unlock(es);
+   }
+}
+#endif
+
 -(void) viewDidEndLiveResize
 {
    [super viewDidEndLiveResize];
+   
    ALLEGRO_DISPLAY_OSX_WIN* dpy =  (ALLEGRO_DISPLAY_OSX_WIN*) dpy_ptr;
    NSWindow *window = dpy->win;
    NSRect rc = [window frame];
    NSRect content = [window contentRectForFrameRect: rc];
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+   content = [self convertRectToBacking: content];
+#endif
    ALLEGRO_EVENT_SOURCE *es = &dpy->parent.es;
-
+   
    _al_event_source_lock(es);
    if (_al_event_source_needs_to_generate_event(es)) {
       ALLEGRO_EVENT event;
@@ -527,6 +564,9 @@ void _al_osx_mouse_was_installed(BOOL install) {
    NSWindow *window = dpy->win;
    NSRect rc = [window frame];
    NSRect content = [window contentRectForFrameRect: rc];
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+   content = [self convertRectToBacking: content];
+#endif
    ALLEGRO_EVENT_SOURCE *es = &dpy->parent.es;
 
    _al_event_source_lock(es);
