@@ -71,7 +71,7 @@ static void read_data(png_structp png_ptr, png_bytep data, png_uint_32 length)
  *  Check if input file is really PNG format.
  */
 #define PNG_BYTES_TO_CHECK 4
-
+#include <stdio.h>
 static int check_if_png(ALLEGRO_FILE *fp)
 {
    unsigned char buf[PNG_BYTES_TO_CHECK];
@@ -107,6 +107,7 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
    unsigned char *dest;
    bool premul = !(flags & ALLEGRO_NO_PREMULTIPLIED_ALPHA);
    bool index_only;
+   int i;
 
    ALLEGRO_ASSERT(png_ptr && info_ptr);
 
@@ -134,6 +135,8 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
       if (!(color_type & PNG_COLOR_MASK_PALETTE))
          png_set_tRNS_to_alpha(png_ptr);
       png_get_tRNS(png_ptr, info_ptr, &trans, &num_trans, NULL);
+      for (i = 0; i < num_trans; i++)
+         printf("T: %d\n", trans[i]);
    }
 
    /* Convert 16-bits per colour component to 8-bits per colour component. */
@@ -183,6 +186,10 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
          for (; i < 256; i++)
             pal[i].r = pal[i].g = pal[i].b = 0;
       }
+   }
+
+   for (i = 0; i < 256; i++) {
+      printf("P: %d %d %d\n", pal[i].r, pal[i].g, pal[i].b);
    }
 
    rowbytes = png_get_rowbytes(png_ptr, info_ptr);
