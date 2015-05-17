@@ -261,10 +261,10 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
                      dest[0] = pal[pix].r;
                      dest[1] = pal[pix].g;
                      dest[2] = pal[pix].b;
-                     printf("%d %d %d\n", pal[pix].r, pal[pix].g, pal[pix].b);
                      if (pix < num_trans) {
                         int a = trans[pix];
                         dest[3] = a;
+                        printf("%d\n", a);
                         if (premul) {
                            dest[0] = dest[0] * a / 255;
                            dest[1] = dest[1] * a / 255;
