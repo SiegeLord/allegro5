@@ -71,7 +71,7 @@ static void read_data(png_structp png_ptr, png_bytep data, png_uint_32 length)
  *  Check if input file is really PNG format.
  */
 #define PNG_BYTES_TO_CHECK 4
-#include <stdio.h>
+
 static int check_if_png(ALLEGRO_FILE *fp)
 {
    unsigned char buf[PNG_BYTES_TO_CHECK];
@@ -107,7 +107,6 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
    unsigned char *dest;
    bool premul = !(flags & ALLEGRO_NO_PREMULTIPLIED_ALPHA);
    bool index_only;
-   int i;
 
    ALLEGRO_ASSERT(png_ptr && info_ptr);
 
@@ -264,7 +263,6 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
                      if (pix < num_trans) {
                         int a = trans[pix];
                         dest[3] = a;
-                        printf("%d\n", a);
                         if (premul) {
                            dest[0] = dest[0] * a / 255;
                            dest[1] = dest[1] * a / 255;

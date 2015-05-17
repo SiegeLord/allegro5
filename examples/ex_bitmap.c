@@ -49,6 +49,7 @@ int main(int argc, char **argv)
     
     t0 = al_get_time();
     bitmap = al_load_bitmap(filename);
+    al_save_bitmap("test.bmp", bitmap);
     t1 = al_get_time();
     if (!bitmap) {
        abort_example("%s not found or failed to load\n", filename);
