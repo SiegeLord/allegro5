@@ -135,8 +135,6 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
       if (!(color_type & PNG_COLOR_MASK_PALETTE))
          png_set_tRNS_to_alpha(png_ptr);
       png_get_tRNS(png_ptr, info_ptr, &trans, &num_trans, NULL);
-      for (i = 0; i < num_trans; i++)
-         printf("T: %d\n", trans[i]);
    }
 
    /* Convert 16-bits per colour component to 8-bits per colour component. */
@@ -186,10 +184,6 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
          for (; i < 256; i++)
             pal[i].r = pal[i].g = pal[i].b = 0;
       }
-   }
-
-   for (i = 0; i < 256; i++) {
-      printf("P: %d %d %d\n", pal[i].r, pal[i].g, pal[i].b);
    }
 
    rowbytes = png_get_rowbytes(png_ptr, info_ptr);
@@ -267,6 +261,7 @@ static ALLEGRO_BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr,
                      dest[0] = pal[pix].r;
                      dest[1] = pal[pix].g;
                      dest[2] = pal[pix].b;
+                     printf("%d %d %d\n", pal[pix].r, pal[pix].g, pal[pix].b);
                      if (pix < num_trans) {
                         int a = trans[pix];
                         dest[3] = a;
