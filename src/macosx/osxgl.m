@@ -2157,11 +2157,17 @@ static bool set_display_flag(ALLEGRO_DISPLAY *display, int flag, bool onoff)
          if (onoff) {
             [view performSelectorOnMainThread: @selector(enterFullScreenWindowMode) withObject:nil waitUntilDone:YES];
             NSRect sc = [[win screen] frame];
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+            sc = [win convertRectToBacking: sc];
+#endif
             resize_display_win(display, sc.size.width, sc.size.height);
             display->flags |= ALLEGRO_FULLSCREEN_WINDOW;
          } else {
             [view performSelectorOnMainThread: @selector(exitFullScreenWindowMode) withObject:nil waitUntilDone:YES];
             NSRect sc = [view frame];
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+            sc = [win convertRectToBacking: sc];
+#endif
             display->flags &= ~ALLEGRO_FULLSCREEN_WINDOW;
             resize_display_win(display, sc.size.width, sc.size.height);
             [view performSelectorOnMainThread: @selector(finishExitingFullScreenWindowMode) withObject:nil waitUntilDone:YES];
