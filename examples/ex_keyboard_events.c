@@ -66,10 +66,10 @@ static void main_loop(void)
          /* ALLEGRO_EVENT_KEY_DOWN - a keyboard key was pressed.
           */
          case ALLEGRO_EVENT_KEY_DOWN:
+            log_key("KEY_DOWN", event.keyboard.keycode, 0, 0);
             if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
                return;
             }
-            log_key("KEY_DOWN", event.keyboard.keycode, 0, 0);
             break;
 
          /* ALLEGRO_EVENT_KEY_UP - a keyboard key was released.

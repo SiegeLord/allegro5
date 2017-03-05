@@ -282,6 +282,22 @@ static int modifier_flags[8][3] = {
 /* Table of key names. */
 static char const *key_names[ALLEGRO_KEY_MAX];
 
+/* find_allegro_key
+ *  Search the translation table for the Allegro key corresponding to the
+ *  given KeySym.
+ */
+static int find_allegro_key(KeySym sym)
+{
+   int i;
+   int n = sizeof translation_table / sizeof *translation_table;
+
+   for (i = 0; i < n; i++) {
+      if (translation_table[i].keysym == sym)
+         return translation_table[i].allegro_key;
+   }
+   return 0;
+}
+
 
 
 /* update_shifts
@@ -396,9 +412,14 @@ void _al_xwin_keyboard_handler(XKeyEvent *event, ALLEGRO_DISPLAY *display)
    if (!xkeyboard_installed)
       return;
 
+   printf("Keycode: %d\n", (int)event->keycode);
+   /*
    keycode = keycode_to_scancode[event->keycode];
    if (keycode == -1)
       keycode = find_unknown_key_assignment(event->keycode);
+   //keycode = find_allegro_key(event->keycode);*/
+   keycode = keycode_to_scancode[event->keycode];
+   printf("A5 keycode: %d\n", keycode);
 
    update_shifts(event);
 
@@ -498,24 +519,6 @@ void _al_xwin_keyboard_switch_handler(ALLEGRO_DISPLAY *display, bool focus_in)
 
 
 
-/* find_allegro_key
- *  Search the translation table for the Allegro key corresponding to the
- *  given KeySym.
- */
-static int find_allegro_key(KeySym sym)
-{
-   int i;
-   int n = sizeof translation_table / sizeof *translation_table;
-
-   for (i = 0; i < n; i++) {
-      if (translation_table[i].keysym == sym)
-         return translation_table[i].allegro_key;
-   }
-   return 0;
-}
-
-
-
 /* scancode_to_name:
  *  Converts the given scancode to a description of the key.
  */
@@ -526,7 +529,309 @@ static const char *x_scancode_to_name(int scancode)
    return key_names[scancode];
 }
 
+static int translate_keycode_v2(Display *display, int keycode)
+{
+   int key_sym;
 
+   /* Valid key code range is  [8,255], according to the Xlib manual */
+   if (keycode < 8 || keycode > 255)
+      return ALLEGRO_KEY_UNKNOWN;
+
+   /* Try secondary keysym, for numeric keypad keys
+    * Note: This way we always force "NumLock = ON", which is intentional
+    * since the returned key code should correspond to a physical
+    * location.
+    */
+   key_sym = XkbKeycodeToKeysym(display, keycode, 0, 1);
+   switch (key_sym)
+   {
+      case XK_KP_0:           return ALLEGRO_KEY_PAD_0;
+      case XK_KP_1:           return ALLEGRO_KEY_PAD_1;
+      case XK_KP_2:           return ALLEGRO_KEY_PAD_2;
+      case XK_KP_3:           return ALLEGRO_KEY_PAD_3;
+      case XK_KP_4:           return ALLEGRO_KEY_PAD_4;
+      case XK_KP_5:           return ALLEGRO_KEY_PAD_5;
+      case XK_KP_6:           return ALLEGRO_KEY_PAD_6;
+      case XK_KP_7:           return ALLEGRO_KEY_PAD_7;
+      case XK_KP_8:           return ALLEGRO_KEY_PAD_8;
+      case XK_KP_9:           return ALLEGRO_KEY_PAD_9;
+      case XK_KP_Separator:
+      case XK_KP_Decimal:     return ALLEGRO_KEY_PAD_DELETE;
+      case XK_KP_Equal:       return ALLEGRO_KEY_PAD_EQUALS;
+      case XK_KP_Enter:       return ALLEGRO_KEY_PAD_ENTER;
+      default:                break;
+   }
+
+   /* Now try primary keysym for function keys (non-printable keys)
+    * These should not depend on the current keyboard layout
+    */
+   key_sym = XkbKeycodeToKeysym(display, keycode, 0, 0);
+   printf("%d %d %d\n", key_sym, keycode, XK_Escape);
+   switch (key_sym)
+   {
+      case XK_Escape:         return ALLEGRO_KEY_ESCAPE;
+      case XK_Tab:            return ALLEGRO_KEY_TAB;
+      case XK_Shift_L:        return ALLEGRO_KEY_LSHIFT;
+      case XK_Shift_R:        return ALLEGRO_KEY_RSHIFT;
+      case XK_Control_L:      return ALLEGRO_KEY_LCTRL;
+      case XK_Control_R:      return ALLEGRO_KEY_RCTRL;
+      case XK_Meta_L:
+      case XK_Alt_L:          return ALLEGRO_KEY_ALT;
+      case XK_Mode_switch:      /* Mapped to Alt_R on many keyboards */
+      case XK_ISO_Level3_Shift: /* AltGr on at least some machines */
+      case XK_Meta_R:
+      case XK_Alt_R:          return ALLEGRO_KEY_ALTGR;
+      case XK_Super_L:        return ALLEGRO_KEY_LWIN;
+      case XK_Super_R:        return ALLEGRO_KEY_RWIN;
+      case XK_Menu:           return ALLEGRO_KEY_MENU;
+      case XK_Num_Lock:       return ALLEGRO_KEY_NUMLOCK;
+      case XK_Caps_Lock:      return ALLEGRO_KEY_CAPSLOCK;
+      case XK_Print:          return ALLEGRO_KEY_PRINTSCREEN;
+      case XK_Scroll_Lock:    return ALLEGRO_KEY_SCROLLLOCK;
+      case XK_Pause:          return ALLEGRO_KEY_PAUSE;
+      case XK_Delete:         return ALLEGRO_KEY_DELETE;
+      case XK_BackSpace:      return ALLEGRO_KEY_BACKSPACE;
+      case XK_Return:         return ALLEGRO_KEY_ENTER;
+      case XK_Home:           return ALLEGRO_KEY_HOME;
+      case XK_End:            return ALLEGRO_KEY_END;
+      case XK_Page_Up:        return ALLEGRO_KEY_PGUP;
+      case XK_Page_Down:      return ALLEGRO_KEY_PGDN;
+      case XK_Insert:         return ALLEGRO_KEY_INSERT;
+      case XK_Left:           return ALLEGRO_KEY_LEFT;
+      case XK_Right:          return ALLEGRO_KEY_RIGHT;
+      case XK_Down:           return ALLEGRO_KEY_DOWN;
+      case XK_Up:             return ALLEGRO_KEY_UP;
+      case XK_F1:             return ALLEGRO_KEY_F1;
+      case XK_F2:             return ALLEGRO_KEY_F2;
+      case XK_F3:             return ALLEGRO_KEY_F3;
+      case XK_F4:             return ALLEGRO_KEY_F4;
+      case XK_F5:             return ALLEGRO_KEY_F5;
+      case XK_F6:             return ALLEGRO_KEY_F6;
+      case XK_F7:             return ALLEGRO_KEY_F7;
+      case XK_F8:             return ALLEGRO_KEY_F8;
+      case XK_F9:             return ALLEGRO_KEY_F9;
+      case XK_F10:            return ALLEGRO_KEY_F10;
+      case XK_F11:            return ALLEGRO_KEY_F11;
+      case XK_F12:            return ALLEGRO_KEY_F12;
+
+      /* Numeric keypad */
+      case XK_KP_Divide:      return ALLEGRO_KEY_PAD_SLASH;
+      case XK_KP_Multiply:    return ALLEGRO_KEY_PAD_ASTERISK;
+      case XK_KP_Subtract:    return ALLEGRO_KEY_PAD_MINUS;
+      case XK_KP_Add:         return ALLEGRO_KEY_PAD_PLUS;
+
+      /* These should have been detected in secondary keysym test above! */
+      case XK_KP_Insert:      return ALLEGRO_KEY_PAD_0;
+      case XK_KP_End:         return ALLEGRO_KEY_PAD_1;
+      case XK_KP_Down:        return ALLEGRO_KEY_PAD_2;
+      case XK_KP_Page_Down:   return ALLEGRO_KEY_PAD_3;
+      case XK_KP_Left:        return ALLEGRO_KEY_PAD_4;
+      case XK_KP_Right:       return ALLEGRO_KEY_PAD_6;
+      case XK_KP_Home:        return ALLEGRO_KEY_PAD_7;
+      case XK_KP_Up:          return ALLEGRO_KEY_PAD_8;
+      case XK_KP_Page_Up:     return ALLEGRO_KEY_PAD_9;
+      case XK_KP_Delete:      return ALLEGRO_KEY_PAD_DELETE;
+      case XK_KP_Equal:       return ALLEGRO_KEY_PAD_EQUALS;
+      case XK_KP_Enter:       return ALLEGRO_KEY_PAD_ENTER;
+
+      /* Last resort: Check for printable keys (should not happen if the XKB
+       * extension is available). This will give a layout dependent mapping
+       * (which is wrong, and we may miss some keys, especially on non-US
+       * keyboards), but it's better than nothing...
+       * */
+      case XK_a:              return ALLEGRO_KEY_A;
+      case XK_b:              return ALLEGRO_KEY_B;
+      case XK_c:              return ALLEGRO_KEY_C;
+      case XK_d:              return ALLEGRO_KEY_D;
+      case XK_e:              return ALLEGRO_KEY_E;
+      case XK_f:              return ALLEGRO_KEY_F;
+      case XK_g:              return ALLEGRO_KEY_G;
+      case XK_h:              return ALLEGRO_KEY_H;
+      case XK_i:              return ALLEGRO_KEY_I;
+      case XK_j:              return ALLEGRO_KEY_J;
+      case XK_k:              return ALLEGRO_KEY_K;
+      case XK_l:              return ALLEGRO_KEY_L;
+      case XK_m:              return ALLEGRO_KEY_M;
+      case XK_n:              return ALLEGRO_KEY_N;
+      case XK_o:              return ALLEGRO_KEY_O;
+      case XK_p:              return ALLEGRO_KEY_P;
+      case XK_q:              return ALLEGRO_KEY_Q;
+      case XK_r:              return ALLEGRO_KEY_R;
+      case XK_s:              return ALLEGRO_KEY_S;
+      case XK_t:              return ALLEGRO_KEY_T;
+      case XK_u:              return ALLEGRO_KEY_U;
+      case XK_v:              return ALLEGRO_KEY_V;
+      case XK_w:              return ALLEGRO_KEY_W;
+      case XK_x:              return ALLEGRO_KEY_X;
+      case XK_y:              return ALLEGRO_KEY_Y;
+      case XK_z:              return ALLEGRO_KEY_Z;
+      case XK_1:              return ALLEGRO_KEY_1;
+      case XK_2:              return ALLEGRO_KEY_2;
+      case XK_3:              return ALLEGRO_KEY_3;
+      case XK_4:              return ALLEGRO_KEY_4;
+      case XK_5:              return ALLEGRO_KEY_5;
+      case XK_6:              return ALLEGRO_KEY_6;
+      case XK_7:              return ALLEGRO_KEY_7;
+      case XK_8:              return ALLEGRO_KEY_8;
+      case XK_9:              return ALLEGRO_KEY_9;
+      case XK_0:              return ALLEGRO_KEY_0;
+      case XK_space:          return ALLEGRO_KEY_SPACE;
+      case XK_minus:          return ALLEGRO_KEY_MINUS;
+      case XK_equal:          return ALLEGRO_KEY_EQUALS;
+      case XK_bracketleft:    return ALLEGRO_KEY_OPENBRACE;
+      case XK_bracketright:   return ALLEGRO_KEY_CLOSEBRACE;
+      case XK_backslash:      return ALLEGRO_KEY_BACKSLASH;
+      case XK_semicolon:      return ALLEGRO_KEY_SEMICOLON;
+      case XK_apostrophe:     return ALLEGRO_KEY_QUOTE;
+      case XK_grave:          return ALLEGRO_KEY_TILDE;
+      case XK_comma:          return ALLEGRO_KEY_COMMA;
+      case XK_period:         return ALLEGRO_KEY_FULLSTOP;
+      case XK_slash:          return ALLEGRO_KEY_SLASH;
+      case XK_less:           return ALLEGRO_KEY_BACKSLASH2; /* At least in some layouts... */
+      default:                break;
+   }
+
+   /* No matching translation was found */
+   return ALLEGRO_KEY_UNKNOWN;
+}
+
+static void _al_xwin_get_keyboard_mapping_v2(void)
+{
+   ALLEGRO_SYSTEM_XGLX *system = (void *)al_get_system_driver();
+   char name[XkbKeyNameLength + 1];
+   int keycode;
+   int i;
+
+   memset(keycode_to_scancode, 0, sizeof keycode_to_scancode);
+   
+   /* Use XKB to determine physical key locations independently of the current
+    * keyboard layout
+    */
+   XkbDescPtr desc = XkbGetMap(system->x11display, 0, XkbUseCoreKbd);
+   XkbGetNames(system->x11display, XkbKeyNamesMask, desc);
+
+   /* Find the X11 key code -> Allegro key code mapping */
+   for (keycode = desc->min_key_code; keycode <= desc->max_key_code; keycode++) {
+      int key;
+      memcpy(name, desc->names->keys[keycode].name, XkbKeyNameLength);
+      name[XkbKeyNameLength] = '\0';
+
+      /* Map the key name to a Allegro key code. Note: We only map printable
+       * keys here, and we use the US keyboard layout. The rest of the
+       * keys (function keys) are mapped using traditional KeySym
+       * translations.
+       */
+      if      (strcmp(name, "TLDE") == 0) key = ALLEGRO_KEY_TILDE;
+      else if (strcmp(name, "AE01") == 0) key = ALLEGRO_KEY_1;
+      else if (strcmp(name, "AE02") == 0) key = ALLEGRO_KEY_2;
+      else if (strcmp(name, "AE03") == 0) key = ALLEGRO_KEY_3;
+      else if (strcmp(name, "AE04") == 0) key = ALLEGRO_KEY_4;
+      else if (strcmp(name, "AE05") == 0) key = ALLEGRO_KEY_5;
+      else if (strcmp(name, "AE06") == 0) key = ALLEGRO_KEY_6;
+      else if (strcmp(name, "AE07") == 0) key = ALLEGRO_KEY_7;
+      else if (strcmp(name, "AE08") == 0) key = ALLEGRO_KEY_8;
+      else if (strcmp(name, "AE09") == 0) key = ALLEGRO_KEY_9;
+      else if (strcmp(name, "AE10") == 0) key = ALLEGRO_KEY_0;
+      else if (strcmp(name, "AE11") == 0) key = ALLEGRO_KEY_MINUS;
+      else if (strcmp(name, "AE12") == 0) key = ALLEGRO_KEY_EQUALS;
+      else if (strcmp(name, "AD01") == 0) key = ALLEGRO_KEY_Q;
+      else if (strcmp(name, "AD02") == 0) key = ALLEGRO_KEY_W;
+      else if (strcmp(name, "AD03") == 0) key = ALLEGRO_KEY_E;
+      else if (strcmp(name, "AD04") == 0) key = ALLEGRO_KEY_R;
+      else if (strcmp(name, "AD05") == 0) key = ALLEGRO_KEY_T;
+      else if (strcmp(name, "AD06") == 0) key = ALLEGRO_KEY_Y;
+      else if (strcmp(name, "AD07") == 0) key = ALLEGRO_KEY_U;
+      else if (strcmp(name, "AD08") == 0) key = ALLEGRO_KEY_I;
+      else if (strcmp(name, "AD09") == 0) key = ALLEGRO_KEY_O;
+      else if (strcmp(name, "AD10") == 0) key = ALLEGRO_KEY_P;
+      else if (strcmp(name, "AD11") == 0) key = ALLEGRO_KEY_OPENBRACE;
+      else if (strcmp(name, "AD12") == 0) key = ALLEGRO_KEY_CLOSEBRACE;
+      else if (strcmp(name, "AC01") == 0) key = ALLEGRO_KEY_A;
+      else if (strcmp(name, "AC02") == 0) key = ALLEGRO_KEY_S;
+      else if (strcmp(name, "AC03") == 0) key = ALLEGRO_KEY_D;
+      else if (strcmp(name, "AC04") == 0) key = ALLEGRO_KEY_F;
+      else if (strcmp(name, "AC05") == 0) key = ALLEGRO_KEY_G;
+      else if (strcmp(name, "AC06") == 0) key = ALLEGRO_KEY_H;
+      else if (strcmp(name, "AC07") == 0) key = ALLEGRO_KEY_J;
+      else if (strcmp(name, "AC08") == 0) key = ALLEGRO_KEY_K;
+      else if (strcmp(name, "AC09") == 0) key = ALLEGRO_KEY_L;
+      else if (strcmp(name, "AC10") == 0) key = ALLEGRO_KEY_SEMICOLON;
+      else if (strcmp(name, "AC11") == 0) key = ALLEGRO_KEY_SEMICOLON2;
+      else if (strcmp(name, "AB01") == 0) key = ALLEGRO_KEY_Z;
+      else if (strcmp(name, "AB02") == 0) key = ALLEGRO_KEY_X;
+      else if (strcmp(name, "AB03") == 0) key = ALLEGRO_KEY_C;
+      else if (strcmp(name, "AB04") == 0) key = ALLEGRO_KEY_V;
+      else if (strcmp(name, "AB05") == 0) key = ALLEGRO_KEY_B;
+      else if (strcmp(name, "AB06") == 0) key = ALLEGRO_KEY_N;
+      else if (strcmp(name, "AB07") == 0) key = ALLEGRO_KEY_M;
+      else if (strcmp(name, "AB08") == 0) key = ALLEGRO_KEY_COMMA;
+      else if (strcmp(name, "AB09") == 0) key = ALLEGRO_KEY_FULLSTOP;
+      else if (strcmp(name, "AB10") == 0) key = ALLEGRO_KEY_SLASH;
+      else if (strcmp(name, "BKSL") == 0) key = ALLEGRO_KEY_BACKSLASH;
+      else if (strcmp(name, "LSGT") == 0) key = ALLEGRO_KEY_BACKSLASH2;
+      else key = 0;
+
+      if ((keycode >= 0) && (keycode < 256))
+         keycode_to_scancode[keycode] = key;
+   }
+
+   XkbFreeNames(desc, XkbKeyNamesMask, True);
+   XkbFreeKeyboard(desc, 0, True);
+   
+   for (keycode = 0; keycode < 256; keycode++) {
+      KeySym keysym;
+      /* Translate the un-translated key codes using traditional X11 KeySym
+         lookups. */
+      if (keycode_to_scancode[keycode] == 0) {
+         printf("Translating %d\n", keycode);
+         keycode_to_scancode[keycode] = translate_keycode_v2(system->x11display, keycode);
+      }
+      
+      keysym = XkbKeycodeToKeysym(system->x11display, keycode, 0, 0);
+      if (keysym != NoSymbol) {
+         int extra;
+         char* name = al_calloc(1, 256);
+         
+         XkbTranslateKeySym(system->x11display, &keysym, 0,
+                            name, 256,
+                            &extra);
+         if (strlen(name) == 0) {
+            al_free(name);
+            name = NULL;
+         }
+
+         // Not perfect due to control chars and numpad.
+         key_names[keycode_to_scancode[keycode]] = name;
+         
+         //~ char* name = XKeysymToString(keysym);
+         //~ if (!name) {
+            //~ name = _al_keyboard_common_names[keycode_to_scancode[keycode]];
+            //~ printf("No name found for %d: %s\n", keysym, name);
+         //~ }
+         
+         //~ key_names[keycode_to_scancode[keycode]] = name;
+      }
+   }
+
+   if (xmodmap)
+      XFreeModifiermap(xmodmap);
+   xmodmap = XGetModifierMapping(system->x11display);
+   for (i = 0; i < 8; i++) {
+      int j;
+      char str[1024];
+      sprintf(str, "Modifier %d:", i + 1);
+      for (j = 0; j < xmodmap->max_keypermod; j++) {
+         KeyCode keycode = xmodmap->modifiermap[i * xmodmap->max_keypermod + j];
+         // XKeycodeToKeysym is deprecated
+         //KeySym sym = XKeycodeToKeysym(system->x11display, keycode, 0);
+         KeySym sym = XkbKeycodeToKeysym(system->x11display, keycode, 0, 0);
+
+         char *sym_str = XKeysymToString(sym);
+         sprintf(str + strlen(str), " %s", sym_str ? sym_str : "NULL");
+      }
+      ALLEGRO_DEBUG("%s\n", str);
+   }
+}
 
 /* _al_xwin_get_keyboard_mapping:
  *  Generate a mapping from X11 keycodes to Allegro ALLEGRO_KEY_* codes. We have
@@ -820,9 +1125,10 @@ static int x_keyboard_init(void)
    }
 #endif
 
-   if (!_al_xwin_get_keyboard_mapping()) {
+   /*if (!_al_xwin_get_keyboard_mapping()) {
       return 1;
-   }
+   }*/
+   _al_xwin_get_keyboard_mapping_v2();
 
    _al_mutex_unlock(&s->lock);
 
