@@ -66,6 +66,18 @@ static unsigned int get_buffer_size(const ALLEGRO_CONFIG *config)
    return DEFAULT_BUFFER_SIZE;
 }
 
+static void get_real_buffer_size(snd_pcm_uframes_t* size)
+{
+   const char *val = al_get_config_value(al_get_system_config(),
+      "alsa", "buffer_size2");
+   if (val && val[0] != '\0') {
+      int n = atoi(val);
+      if (n < 1)
+         n = 1;
+      *size = n;
+   }
+}
+
 typedef struct ALSA_VOICE {
    unsigned int frame_size; /* in bytes */
    unsigned int len; /* in frames */
@@ -631,6 +643,11 @@ static int alsa_allocate_voice(ALLEGRO_VOICE *voice)
    ALSA_CHECK(snd_pcm_hw_params_set_channels(ex_data->pcm_handle, hwparams, chan_count));
    ALSA_CHECK(snd_pcm_hw_params_set_rate_near(ex_data->pcm_handle, hwparams, &req_freq, NULL));
    ALSA_CHECK(snd_pcm_hw_params_set_period_size_near(ex_data->pcm_handle, hwparams, &ex_data->frag_len, NULL));
+   snd_pcm_uframes_t real_buffer_size;
+   ALSA_CHECK(snd_pcm_hw_params_get_buffer_size_min(hwparams, &real_buffer_size));
+   get_real_buffer_size(&real_buffer_size);
+   ALLEGRO_INFO("Real buffer size: %d\n", (int)real_buffer_size);
+   ALSA_CHECK(snd_pcm_hw_params_set_buffer_size_near(ex_data->pcm_handle, hwparams, &real_buffer_size));
    ALSA_CHECK(snd_pcm_hw_params(ex_data->pcm_handle, hwparams));
 
    if (voice->frequency != req_freq) {
