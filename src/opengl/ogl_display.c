@@ -69,7 +69,15 @@ void _al_ogl_set_target_bitmap(ALLEGRO_DISPLAY *display, ALLEGRO_BITMAP *bitmap)
    if (bitmap->parent && bitmap->parent->locked)
       return;
 
+    GLenum e = glGetError();
+    if (e) {
+        ALLEGRO_ERROR("Failed target 1: %s\n", _al_gl_error_string(e));
+    }
    _al_ogl_setup_fbo(display, bitmap);
+    e = glGetError();
+    if (e) {
+        ALLEGRO_ERROR("Failed target 2: %s\n", _al_gl_error_string(e));
+    }
    if (display->ogl_extras->opengl_target == target) {
       _al_ogl_setup_bitmap_clipping(bitmap);
    }

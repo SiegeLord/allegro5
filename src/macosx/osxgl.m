@@ -727,7 +727,15 @@ static bool set_current_display(ALLEGRO_DISPLAY* d) {
    if (dpy->ctx != nil) {
       [dpy->ctx makeCurrentContext];
    }
+   GLenum e = glGetError();
+   if (e) {
+      ALLEGRO_ERROR("Failed earlier cur_disp 1: %s\n", _al_gl_error_string(e));
+   }
    _al_ogl_set_extensions(d->ogl_extras->extension_api);
+   e = glGetError();
+   if (e) {
+      ALLEGRO_ERROR("Failed earlier cur_disp 2: %s\n", _al_gl_error_string(e));
+   }
    return true;
 }
 
@@ -770,6 +778,8 @@ static void osx_set_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
    /* First, check the display flags, so we know if we want a fullscreen
     * mode or a windowed mode.
     */
+   *a++ = NSOpenGLPFAOpenGLProfile;
+   *a++ = NSOpenGLProfileVersion3_2Core;
    if (dpy->parent.flags & ALLEGRO_FULLSCREEN) {
       *a = NSOpenGLPFAFullScreen; a++;
       // Take over the screen.
@@ -851,11 +861,25 @@ static void osx_set_opengl_pixelformat_attributes(ALLEGRO_DISPLAY_OSX_WIN *dpy)
       }
    }
 
+
    /* Accelerated is always preferred, so we only set this for required not
     * for suggested.
     */
    if (extras->required & ALLEGRO_RENDER_METHOD) {
       *a++ = NSOpenGLPFAAccelerated;
+   }
+   
+   NSOpenGLPixelFormatAttribute attr[] = {
+      NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core, // Needed if using opengl 3.2 you can comment this line out to use the old version.
+      NSOpenGLPFAColorSize,     24,
+      NSOpenGLPFAAlphaSize,     8,
+      NSOpenGLPFAAccelerated,
+      NSOpenGLPFADoubleBuffer,
+      0
+   };
+   
+   for (int i = 0; i < sizeof(attr); i++) {
+      dpy->attributes[i] = attr[i];
    }
 }
 
@@ -1631,6 +1655,10 @@ static ALLEGRO_DISPLAY* create_display_win(int w, int h) {
       withObject: [NSValue valueWithPointer:&dpy_params]
       waitUntilDone: YES];
 
+   if (dpy->ctx == nil) {
+      [pool drain];
+      return NULL;
+   }
    free(dpy_params.new_window_title);
 
    if (dpy->parent.flags & ALLEGRO_FULLSCREEN_WINDOW) {
@@ -1642,9 +1670,9 @@ static ALLEGRO_DISPLAY* create_display_win(int w, int h) {
    [dpy->ctx makeCurrentContext];
 
    /* Print out OpenGL version info */
-   ALLEGRO_INFO("OpenGL Version: %s\n", glGetString(GL_VERSION));
-   ALLEGRO_INFO("Vendor: %s\n", glGetString(GL_VENDOR));
-   ALLEGRO_INFO("Renderer: %s\n", glGetString(GL_RENDERER));
+   printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
+   printf("Vendor: %s\n", glGetString(GL_VENDOR));
+   printf("Renderer: %s\n", glGetString(GL_RENDERER));
 
    /* Set up a pixel format to describe the mode we want. */
    osx_set_opengl_pixelformat_attributes(dpy);
@@ -1671,8 +1699,9 @@ static ALLEGRO_DISPLAY* create_display_win(int w, int h) {
    /* Set up GL as we want */
    setup_gl(&dpy->parent);
 
+   
    clear_to_black(dpy->ctx);
-
+   
    /* Add to the display list */
    ALLEGRO_DISPLAY **add = _al_vector_alloc_back(&al_get_system_driver()->displays);
    *add = &dpy->parent;
@@ -1684,6 +1713,11 @@ static ALLEGRO_DISPLAY* create_display_win(int w, int h) {
    }
 
    [pool drain];
+   
+   GLenum e = glGetError();
+   if (e) {
+      ALLEGRO_ERROR("Failed earlier 3: %s\n", _al_gl_error_string(e));
+   }
 
    return &dpy->parent;
 }

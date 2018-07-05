@@ -28,6 +28,8 @@
 #include "allegro5/internal/aintern_display.h"
 #include "allegro5/internal/aintern_shader.h"
 #include "allegro5/internal/aintern_system.h"
+#include "allegro5/allegro_opengl.h"
+#include "allegro5/internal/aintern_opengl.h"
 
 
 ALLEGRO_DEBUG_CHANNEL("display")
@@ -91,6 +93,11 @@ ALLEGRO_DISPLAY *al_create_display(int w, int h)
    display->render_state.alpha_test_value = 0;
 
    _al_vector_init(&display->bitmaps, sizeof(ALLEGRO_BITMAP*));
+    
+    GLenum e = glGetError();
+    if (e) {
+        ALLEGRO_ERROR("Failed earlier 4: %s\n", _al_gl_error_string(e));
+    }
 
    if (settings->settings[ALLEGRO_COMPATIBLE_DISPLAY]) {
       al_set_target_bitmap(al_get_backbuffer(display));
@@ -99,6 +106,12 @@ ALLEGRO_DISPLAY *al_create_display(int w, int h)
       ALLEGRO_DEBUG("ALLEGRO_COMPATIBLE_DISPLAY not set\n");
       _al_set_current_display_only(display);
    }
+    
+    e = glGetError();
+    if (e) {
+        ALLEGRO_ERROR("Failed earlier 5: %s\n", _al_gl_error_string(e));
+    }
+    
 
    if (display->flags & ALLEGRO_PROGRAMMABLE_PIPELINE) {
       display->default_shader = _al_create_default_shader(display->flags);
@@ -111,8 +124,15 @@ ALLEGRO_DISPLAY *al_create_display(int w, int h)
 
    /* Clear the screen */
    if (settings->settings[ALLEGRO_COMPATIBLE_DISPLAY]) {
+       GLenum e = glGetError();
+       if (e) {
+           ALLEGRO_ERROR("Failed earlier 6: %s\n", _al_gl_error_string(e));
+       }
       al_clear_to_color(al_map_rgb(0, 0, 0));
-
+       e = glGetError();
+       if (e) {
+           ALLEGRO_ERROR("Failed earlier 7: %s\n", _al_gl_error_string(e));
+       }
       /* TODO:
        * on iphone, don't kill the initial splashscreen - in fact, it's also
        * annoying in linux to have an extra black frame as first frame and I
@@ -130,6 +150,10 @@ ALLEGRO_DISPLAY *al_create_display(int w, int h)
        */
       al_convert_memory_bitmaps();
    }
+    e = glGetError();
+    if (e) {
+        ALLEGRO_ERROR("Failed earlier 8: %s\n", _al_gl_error_string(e));
+    }
 
    return display;
 }

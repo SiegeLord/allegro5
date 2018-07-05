@@ -42,12 +42,12 @@ int main(int argc, char **argv)
       ALLEGRO_MIPMAP);
    al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
    al_set_new_display_option(ALLEGRO_SAMPLES, 4, ALLEGRO_SUGGEST);
-   al_set_new_display_flags(ALLEGRO_PROGRAMMABLE_PIPELINE);
+   al_set_new_display_flags(ALLEGRO_PROGRAMMABLE_PIPELINE | ALLEGRO_OPENGL_3_0 | ALLEGRO_OPENGL_FORWARD_COMPATIBLE);
    display = al_create_display(640, 480);
    if (!display) {
       abort_example("Error creating display\n");
    }
-
+printf("%s\n", glGetString(GL_VERSION));
    bitmap[0]= load_bitmap("data/mysha.pcx");
    bitmap[1]= load_bitmap("data/obp.jpg");
 
@@ -113,14 +113,14 @@ int main(int argc, char **argv)
          dh = al_get_display_height(display);
 
          redraw = false;
-         al_clear_to_color(al_map_rgb_f(0, 0, 0));
+         al_clear_to_color(al_map_rgb_f(1, 1, 0));
 
          /* We set a second bitmap for texture unit 1. Unit 0 will have
           * the normal texture which al_draw_*_bitmap will set up for us.
           * We then draw the bitmap like normal, except it will use the
           * custom shader.
           */
-         al_set_shader_sampler("tex2", bitmap[1], 1);
+         //al_set_shader_sampler("tex2", bitmap[1], 1);
          al_draw_scaled_rotated_bitmap(bitmap[0], x, y, dw / 2, dh / 2,
             scale, scale, angle, 0);
 

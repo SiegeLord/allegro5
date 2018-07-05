@@ -403,6 +403,11 @@ static bool ogl_upload_bitmap(ALLEGRO_BITMAP *bitmap)
       GL_NEAREST, GL_LINEAR,
       GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR
    };
+    
+   e = glGetError();
+   if (e) {
+     ALLEGRO_ERROR("Failed earlier: %s\n", _al_gl_error_string(e));
+   }
 
    if (ogl_bitmap->texture == 0) {
       glGenTextures(1, &ogl_bitmap->texture);

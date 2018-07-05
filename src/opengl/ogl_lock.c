@@ -133,7 +133,7 @@ ALLEGRO_LOCKED_REGION *_al_ogl_lock_region_new(ALLEGRO_BITMAP *bitmap,
     * See also pitfalls 7 & 8 from:
     * http://www.opengl.org/resources/features/KilgardTechniques/oglpitfall/
     */
-   glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+   //glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
    {
       const int pixel_size = al_get_pixel_size(format);
       const int pixel_alignment = ogl_pixel_alignment(pixel_size);
@@ -164,7 +164,7 @@ ALLEGRO_LOCKED_REGION *_al_ogl_lock_region_new(ALLEGRO_BITMAP *bitmap,
       }
    }
 
-   glPopClientAttrib();
+   //glPopClientAttrib();
 
    if (old_disp != NULL) {
       _al_set_current_display_only(old_disp);
@@ -454,7 +454,7 @@ static void ogl_unlock_region_non_readonly(ALLEGRO_BITMAP *bitmap,
    }
 
    /* Keep this in sync with ogl_lock_region. */
-   glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+   //glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
    {
       const int lock_pixel_size = al_get_pixel_size(lock_format);
       const int pixel_alignment = ogl_pixel_alignment(lock_pixel_size);
@@ -505,7 +505,7 @@ static void ogl_unlock_region_non_readonly(ALLEGRO_BITMAP *bitmap,
    if (biased_alpha) {
       glPixelTransferi(GL_ALPHA_BIAS, 0);
    }
-   glPopClientAttrib();
+   //glPopClientAttrib();
 
    if (old_disp) {
       _al_set_current_display_only(old_disp);

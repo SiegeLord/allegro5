@@ -461,12 +461,21 @@ static void ogl_update_transformation(ALLEGRO_DISPLAY* disp,
       }
 #endif
    } else {
+       GLenum e = glGetError();
+       if (e) {
+           ALLEGRO_ERROR("Failed trans 1: %s\n", _al_gl_error_string(e));
+       }
       glMatrixMode(GL_PROJECTION);
       glLoadMatrixf((float *)target->proj_transform.m);
       glMatrixMode(GL_MODELVIEW);
       glLoadMatrixf((float *)target->transform.m);
+       e = glGetError();
+       if (e) {
+           ALLEGRO_ERROR("Failed trans 2: %s\n", _al_gl_error_string(e));
+       }
    }
 
+   
    if (target->parent) {
       ALLEGRO_BITMAP_EXTRA_OPENGL *ogl_extra = target->parent->extra;
       /* glViewport requires the bottom-left coordinate of the corner. */
@@ -474,6 +483,7 @@ static void ogl_update_transformation(ALLEGRO_DISPLAY* disp,
    } else {
       glViewport(0, 0, target->w, target->h);
    }
+    
 }
 
 static void ogl_clear_depth_buffer(ALLEGRO_DISPLAY *display, float x)

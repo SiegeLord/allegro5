@@ -5,6 +5,7 @@
 #define ALLEGRO_UNSTABLE
 #include "allegro5/allegro.h"
 #include "allegro5/allegro_primitives.h"
+#include "allegro5/allegro_opengl.h"
 
 #include "common.c"
 
@@ -87,11 +88,12 @@ int main(int argc, char **argv)
       abort_example("Could not init primitives addon.\n");
    }
    init_platform_specific();
-   al_set_new_display_flags(ALLEGRO_PROGRAMMABLE_PIPELINE);
+    al_set_new_display_flags(ALLEGRO_PROGRAMMABLE_PIPELINE | ALLEGRO_OPENGL_3_0 | ALLEGRO_OPENGL_FORWARD_COMPATIBLE);
    display = al_create_display(SCREEN_WIDTH, SCREEN_HEIGHT);
    if (!display) {
       abort_example("Error creating display.\n");
    }
+    printf("%s\n", glGetString(GL_VERSION));
 
    vertex_decl = al_create_vertex_decl(vertex_elems, sizeof(CUSTOM_VERTEX));
    if (!vertex_decl) {
@@ -119,15 +121,17 @@ int main(int argc, char **argv)
    if (!shader) {
       abort_example("Failed to create shader.");
    }
+    char buf[1024];
+    printf("%s\n", getcwd(buf, 1024));
 
-   if (al_get_shader_platform(shader) == ALLEGRO_SHADER_GLSL) {
+   //if (al_get_shader_platform(shader) == ALLEGRO_SHADER_GLSL) {
       vertex_shader_file = "data/ex_prim_shader_vertex.glsl";
       pixel_shader_file = "data/ex_prim_shader_pixel.glsl";
-   }
+   /*}
    else {
       vertex_shader_file = "data/ex_prim_shader_vertex.hlsl";
       pixel_shader_file = "data/ex_prim_shader_pixel.hlsl";
-   }
+   }*/
 
    if (!al_attach_shader_source_file(shader, ALLEGRO_VERTEX_SHADER, vertex_shader_file)) {
       abort_example("al_attach_shader_source_file for vertex shader failed: %s\n",
@@ -158,6 +162,8 @@ int main(int argc, char **argv)
    al_register_event_source(queue, al_get_display_event_source(display));
    al_register_event_source(queue, al_get_timer_event_source(timer));
    al_start_timer(timer);
+    
+    ALLEGRO_VERTEX_BUFFER* vbuff = al_create_vertex_buffer(vertex_decl, vertices, NUM_VERTICES, ALLEGRO_PRIM_BUFFER_STATIC);
 
    while (!quit) {
       ALLEGRO_EVENT event;
@@ -181,11 +187,13 @@ int main(int argc, char **argv)
       }
 
       if (redraw && al_is_event_queue_empty(queue)) {
-         al_clear_to_color(al_map_rgb_f(0, 0, 0));
+         al_clear_to_color(al_map_rgb_f(0, 0.5, 0));
 
          al_set_shader_float_vector("light_position", 3, light_position, 1);
-         al_draw_prim(vertices, vertex_decl, NULL, 0, NUM_VERTICES, ALLEGRO_PRIM_TRIANGLE_LIST);
-
+         //al_draw_prim(vertices, vertex_decl, NULL, 0, NUM_VERTICES, ALLEGRO_PRIM_TRIANGLE_LIST);
+          al_draw_vertex_buffer(vbuff, NULL, 0, NUM_VERTICES, ALLEGRO_PRIM_TRIANGLE_LIST);
+          
+         //al_draw_filled_triangle(0, 0, 1, 1, 0, 1, al_map_rgb_f(1.0, 0.0, 1.0));
          al_flip_display();
          redraw = false;
       }

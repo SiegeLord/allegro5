@@ -126,17 +126,21 @@ static void setup_state(const char* vtxs, const ALLEGRO_VERTEX_DECL* decl, ALLEG
 
          e = &decl->elements[ALLEGRO_PRIM_POSITION];
          if(e->attribute) {
+             printf("glGetError 211 %d\n", glGetError());
             convert_storage(e->storage, &type, &ncoord, &normalized);
 
             if (display->ogl_extras->varlocs.pos_loc >= 0) {
                glVertexAttribPointer(display->ogl_extras->varlocs.pos_loc, ncoord, type, normalized, decl->stride, vtxs + e->offset);
-               glEnableVertexAttribArray(display->ogl_extras->varlocs.pos_loc);
+                printf("glGetError 212 %d %d\n", display->ogl_extras->varlocs.pos_loc, glGetError());
+               //glEnableVertexAttribArray(display->ogl_extras->varlocs.pos_loc);
+                printf("glGetError 213 %d\n", glGetError());
             }
          } else {
             if (display->ogl_extras->varlocs.pos_loc >= 0) {
                glDisableVertexAttribArray(display->ogl_extras->varlocs.pos_loc);
             }
          }
+          printf("glGetError 21 %d\n", glGetError());
 
          e = &decl->elements[ALLEGRO_PRIM_TEX_COORD];
          if(!e->attribute)
@@ -182,20 +186,26 @@ static void setup_state(const char* vtxs, const ALLEGRO_VERTEX_DECL* decl, ALLEG
             }
          }
       } else {
+          printf("glGetError 11 pos: %d %d\n", display->ogl_extras->varlocs.pos_loc, glGetError());
          if (display->ogl_extras->varlocs.pos_loc >= 0) {
             glVertexAttribPointer(display->ogl_extras->varlocs.pos_loc, 3, GL_FLOAT, false, sizeof(ALLEGRO_VERTEX), vtxs + offsetof(ALLEGRO_VERTEX, x));
+             printf("glGetError 112 %d\n", glGetError());
             glEnableVertexAttribArray(display->ogl_extras->varlocs.pos_loc);
+             printf("glGetError 113 %d\n", glGetError());
          }
+          printf("glGetError 12 %d\n", glGetError());
          
          if (display->ogl_extras->varlocs.texcoord_loc >= 0) {
             glVertexAttribPointer(display->ogl_extras->varlocs.texcoord_loc, 2, GL_FLOAT, false, sizeof(ALLEGRO_VERTEX), vtxs + offsetof(ALLEGRO_VERTEX, u));
             glEnableVertexAttribArray(display->ogl_extras->varlocs.texcoord_loc);
          }
+          printf("glGetError 13 %d\n", glGetError());
          
          if (display->ogl_extras->varlocs.color_loc >= 0) {
             glVertexAttribPointer(display->ogl_extras->varlocs.color_loc, 4, GL_FLOAT, true, sizeof(ALLEGRO_VERTEX), vtxs + offsetof(ALLEGRO_VERTEX, color));
             glEnableVertexAttribArray(display->ogl_extras->varlocs.color_loc);
          }
+          printf("glGetError 14 %d\n", glGetError());
       }
 #endif
    }
@@ -384,6 +394,7 @@ static int draw_prim_raw(ALLEGRO_BITMAP* target, ALLEGRO_BITMAP* texture,
    const void* vtx, const ALLEGRO_VERTEX_DECL* decl,
    int start, int end, int type)
 {
+    printf("glGetError 1 %d\n", glGetError());
    int num_primitives = 0;
    ALLEGRO_DISPLAY *disp = _al_get_bitmap_display(target);
    ALLEGRO_BITMAP *opengl_target = target;
@@ -408,9 +419,11 @@ static int draw_prim_raw(ALLEGRO_BITMAP* target, ALLEGRO_BITMAP* texture,
    if (vertex_buffer) {
       glBindBuffer(GL_ARRAY_BUFFER, (GLuint)vertex_buffer->common.handle);
    }
+    printf("glGetError 2 %d\n", glGetError());
 
    _al_opengl_set_blender(disp);
    setup_state(vtx, decl, texture);
+    printf("glGetError 3 %d\n", glGetError());
 
    switch (type) {
       case ALLEGRO_PRIM_LINE_LIST: {
@@ -449,6 +462,8 @@ static int draw_prim_raw(ALLEGRO_BITMAP* target, ALLEGRO_BITMAP* texture,
          break;
       };
    }
+    printf("glGetError 4 %d\n", glGetError());
+    
 
    revert_state(texture);
 

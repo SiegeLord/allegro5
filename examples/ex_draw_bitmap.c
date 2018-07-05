@@ -1,6 +1,7 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_font.h>
+#include <allegro5/allegro_opengl.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -239,6 +240,25 @@ static void redraw(void)
    
 }
 
+#define ERR(e) case e: return #e;
+char const *_al_gl_error_string(GLenum e)
+{
+    switch (e) {
+            ERR(GL_NO_ERROR)
+            ERR(GL_INVALID_ENUM)
+            ERR(GL_INVALID_VALUE)
+            ERR(GL_INVALID_OPERATION)
+            ERR(GL_STACK_OVERFLOW)
+            ERR(GL_STACK_UNDERFLOW)
+            ERR(GL_OUT_OF_MEMORY)
+#ifdef ALLEGRO_CFG_OPENGL_PROGRAMMABLE_PIPELINE
+            ERR(GL_INVALID_FRAMEBUFFER_OPERATION)
+#endif
+    }
+    return "UNKNOWN";
+}
+#undef ERR
+
 int main(int argc, char **argv)
 {
    ALLEGRO_TIMER *timer;
@@ -272,12 +292,15 @@ int main(int argc, char **argv)
    #if defined ALLEGRO_CFG_OPENGLES
    al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
    #endif
+    al_set_new_display_flags(ALLEGRO_OPENGL_3_0);
    al_set_new_display_option(ALLEGRO_SUPPORTED_ORIENTATIONS,
                              ALLEGRO_DISPLAY_ORIENTATION_ALL, ALLEGRO_SUGGEST);
+    
    example.display = al_create_display(w, h);
    if (!example.display) {
       abort_example("Error creating display.\n");
    }
+    printf("%s\n", glGetString(GL_VERSION));
 
    w = al_get_display_width(example.display);
    h = al_get_display_height(example.display);
@@ -291,6 +314,11 @@ int main(int argc, char **argv)
    }
 
    al_install_touch_input();
+    
+    GLenum e = glGetError();
+    if (e) {
+        ALLEGRO_ERROR("Failed earlier 2: %s\n", _al_gl_error_string(e));
+    }
 
    example.font = al_create_builtin_font();
    if (!example.font) {

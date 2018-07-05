@@ -17,14 +17,15 @@
 #ifdef ALLEGRO_CFG_SHADER_GLSL
 
 static const char *default_glsl_vertex_source =
-   "attribute vec4 " ALLEGRO_SHADER_VAR_POS ";\n"
-   "attribute vec4 " ALLEGRO_SHADER_VAR_COLOR ";\n"
-   "attribute vec2 " ALLEGRO_SHADER_VAR_TEXCOORD ";\n"
+"#version 330 core\n"
+   "in vec4 " ALLEGRO_SHADER_VAR_POS ";\n"
+   "in vec4 " ALLEGRO_SHADER_VAR_COLOR ";\n"
+   "in vec2 " ALLEGRO_SHADER_VAR_TEXCOORD ";\n"
    "uniform mat4 " ALLEGRO_SHADER_VAR_PROJVIEW_MATRIX ";\n"
    "uniform bool " ALLEGRO_SHADER_VAR_USE_TEX_MATRIX ";\n"
    "uniform mat4 " ALLEGRO_SHADER_VAR_TEX_MATRIX ";\n"
-   "varying vec4 varying_color;\n"
-   "varying vec2 varying_texcoord;\n"
+   "out vec4 varying_color;\n"
+   "out vec2 varying_texcoord;\n"
    "void main()\n"
    "{\n"
    "  varying_color = " ALLEGRO_SHADER_VAR_COLOR ";\n"
@@ -38,19 +39,21 @@ static const char *default_glsl_vertex_source =
    "}\n";
 
 static const char *default_glsl_pixel_source =
+"#version 330\n"
    "#ifdef GL_ES\n"
    "precision lowp float;\n"
    "#endif\n"
    "uniform sampler2D " ALLEGRO_SHADER_VAR_TEX ";\n"
    "uniform bool " ALLEGRO_SHADER_VAR_USE_TEX ";\n"
-   "varying vec4 varying_color;\n"
-   "varying vec2 varying_texcoord;\n"
+   "in vec4 varying_color;\n"
+   "in vec2 varying_texcoord;\n"
+   "out vec4 fragmentColor;\n"
    "void main()\n"
    "{\n"
    "  if (" ALLEGRO_SHADER_VAR_USE_TEX ")\n"
-   "    gl_FragColor = varying_color * texture2D(" ALLEGRO_SHADER_VAR_TEX ", varying_texcoord);\n"
+   "    fragmentColor = varying_color * texture(" ALLEGRO_SHADER_VAR_TEX ", varying_texcoord);\n"
    "  else\n"
-   "    gl_FragColor = varying_color;\n"
+   "    fragmentColor = varying_color;\n"
    "}\n";
 
 #endif /* ALLEGRO_CFG_SHADER_GLSL */

@@ -729,8 +729,17 @@ void _al_ogl_manage_extensions(ALLEGRO_DISPLAY *gl_disp)
     * but it doesn't seem to work until later.
     */
    if (!_al_ogl_version_3_only(gl_disp->flags)) {
+       char const* ext_str = (char const *)glGetString(GL_EXTENSIONS);
       ALLEGRO_DEBUG("OpenGL Extensions:\n");
-      print_extensions((char const *)glGetString(GL_EXTENSIONS));
+       if (ext_str) {
+      
+      print_extensions(ext_str);
+       }
+       else
+       {
+           GLenum e = glGetError();
+           ALLEGRO_DEBUG("Got nothing from glGetString(GL_EXTENSIONS): %s\n", _al_gl_error_string(e));
+       }
    }
 
    /* Print out GLU version */
