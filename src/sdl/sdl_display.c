@@ -89,6 +89,12 @@ static ALLEGRO_DISPLAY *sdl_create_display_locked(int w, int h)
    d->h = h;
    d->flags = al_get_new_display_flags();
    d->flags |= ALLEGRO_OPENGL;
+#ifdef ALLEGRO_CFG_OPENGLES2
+   d->flags |= ALLEGRO_PROGRAMMABLE_PIPELINE;
+#endif
+#ifdef ALLEGRO_CFG_OPENGLES
+   d->flags |= ALLEGRO_OPENGL_ES_PROFILE;
+#endif
    int flags = SDL_WINDOW_OPENGL;
    if (d->flags & ALLEGRO_FULLSCREEN)
       flags |= SDL_WINDOW_FULLSCREEN;
@@ -98,6 +104,20 @@ static ALLEGRO_DISPLAY *sdl_create_display_locked(int w, int h)
       flags |= SDL_WINDOW_BORDERLESS;
    if (d->flags & ALLEGRO_RESIZABLE)
       flags |= SDL_WINDOW_RESIZABLE;
+
+#ifdef ALLEGRO_CFG_OPENGLES
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+#ifdef ALLEGRO_CFG_OPENGLES1
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+   SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles");
+#else
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+   SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2");
+#endif
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#else
+   SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+#endif
 
    GLoption(ALLEGRO_COLOR_SIZE, SDL_GL_BUFFER_SIZE);
    GLoption(ALLEGRO_RED_SIZE, SDL_GL_RED_SIZE);
