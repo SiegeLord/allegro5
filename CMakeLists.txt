@@ -822,6 +822,29 @@ if(SUPPORT_X11)
 endif(SUPPORT_X11)
 
 #
+# Raspberry Pi
+#
+
+if(ALLEGRO_RASPBERRYPI)
+    if(WANT_X11)
+        if(EXISTS "/opt/vc/lib/libbrcmGLESv2.so")
+           set(OPENGLES2_LIBRARIES "/opt/vc/lib/libbrcmGLESv2.so;/opt/vc/lib/libbrcmEGL.so")#;/opt/vc/lib/libbcm_host.so")
+        else()
+           set(opengles2_libraries "/opt/vc/lib/libglesv2.so;/opt/vc/lib/libegl.so")#;/opt/vc/lib/libbcm_host.so")
+        endif()
+    else()
+        find_package(GBM)
+        find_package(DRM)
+        if(NOT GBM_FOUND OR NOT DRM_FOUND)
+            message(FATAL_ERROR
+                "RaspberryPI without X11 requires libgbm and libdrm.")
+        endif()
+        include_directories(${GBM_INCLUDE_DIR})
+        include_directories(${DRM_INCLUDE_DIR})
+    endif()
+endif()
+
+#
 # Windows
 #
 
@@ -937,7 +960,12 @@ endif(ANDROID)
 
 if(ALLEGRO_RASPBERRYPI)
     list(APPEND LIBRARY_SOURCES ${ALLEGRO_SRC_RASPBERRYPI_FILES})
-    list(APPEND PLATFORM_LIBS ${X11_LIBRARIES})
+    if(WANT_X11)
+        list(APPEND PLATFORM_LIBS ${X11_LIBRARIES})
+        list(APPEND LIBRARY_SOURCES ${ALLEGRO_SRC_RASPBERRYPI_X_FILES})
+    else()
+        list(APPEND PLATFORM_LIBS "${GBM_LIBRARY}")
+    endif()
 endif(ALLEGRO_RASPBERRYPI)
 
 if(SUPPORT_OPENGL)

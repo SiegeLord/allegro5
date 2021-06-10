@@ -100,7 +100,7 @@ static void process_character(unsigned char ch);
 static void handle_key_press(int mycode, unsigned int ascii);
 static void handle_key_release(int mycode);
 
-
+#include <stdio.h>
 
 /* the driver vtable */
 #define KEYDRV_LINUX    AL_ID('L','N','X','C')
@@ -324,10 +324,12 @@ static bool lkeybd_init_keyboard(void)
    if (tcgetattr(the_keyboard.fd, &the_keyboard.startup_termio) != 0) {
       goto Error;
    }
+   printf("Keyboard init %d\n", __LINE__);
 
    /* Save previous keyboard mode (probably XLATE). */
    if (ioctl(the_keyboard.fd, KDGKBMODE, &the_keyboard.startup_kbmode) != 0) {
-      //goto Error;
+      printf("can't save!?\n");
+      goto Error;
    }
 
    can_restore_termio_and_kbmode = false;
@@ -362,7 +364,7 @@ static bool lkeybd_init_keyboard(void)
 
    /* Set the keyboard mode to mediumraw. */
    if (ioctl(the_keyboard.fd, KDSKBMODE, K_MEDIUMRAW) != 0) {
-      //goto Error;
+      goto Error;
    }
 
    the_keyboard.three_finger_flag = true;
@@ -528,6 +530,7 @@ static void process_character(unsigned char ch)
    /* read kernel's keycode and convert to Allegro's keycode */
    int keycode = ch & 0x7f;
    bool press = !(ch & 0x80);
+   printf("raw char %d %d\n", ch, keycode);
    int mycode = kernel_to_mycode[keycode];
 
    /* if the key was something weird we don't understand, skip it */
@@ -590,6 +593,7 @@ static void process_character(unsigned char ch)
  */
 static void handle_key_press(int mycode, unsigned int ascii)
 {
+   printf("handle_key_press %d %c\n", mycode, ascii);
    ALLEGRO_EVENT_TYPE event_type;
    ALLEGRO_EVENT event;
 

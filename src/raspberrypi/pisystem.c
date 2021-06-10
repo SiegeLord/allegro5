@@ -5,13 +5,14 @@
 #include "allegro5/internal/aintern_raspberrypi.h"
 #include "allegro5/platform/aintunix.h"
 #include "allegro5/platform/aintlnx.h"
-#include "allegro5/internal/aintern_x.h"
-#include "allegro5/internal/aintern_xevents.h"
-#include "allegro5/internal/aintern_xmouse.h"
+//#include "allegro5/internal/aintern_x.h"
+//#include "allegro5/internal/aintern_xevents.h"
+//#include "allegro5/internal/aintern_xmouse.h"
 
-#include <bcm_host.h>
+//#include <bcm_host.h>
 
 #include <signal.h>
+#include <stdio.h>
 
 ALLEGRO_DEBUG_CHANNEL("system")
 
@@ -23,7 +24,7 @@ static ALLEGRO_SYSTEM *pi_initialize(int flags)
 
    ALLEGRO_SYSTEM_RASPBERRYPI *s;
 
-   bcm_host_init();
+   //bcm_host_init();
 
    s = al_calloc(1, sizeof *s);
 
@@ -31,17 +32,17 @@ static ALLEGRO_SYSTEM *pi_initialize(int flags)
 
    _al_unix_init_time();
 
-   if (getenv("DISPLAY")) {
-      _al_mutex_init_recursive(&s->lock);
-      s->x11display = XOpenDisplay(0);
-      _al_thread_create(&s->thread, _al_xwin_background_thread, s);
-      ALLEGRO_INFO("events thread spawned.\n");
-      /* We need to put *some* atom into the ClientMessage we send for
-       * faking mouse movements with al_set_mouse_xy - so let's ask X11
-       * for one here.
-       */
-      s->AllegroAtom = XInternAtom(s->x11display, "AllegroAtom", False);
-   }
+   //if (getenv("DISPLAY")) {
+   //   _al_mutex_init_recursive(&s->lock);
+   //   s->x11display = XOpenDisplay(0);
+   //   _al_thread_create(&s->thread, _al_xwin_background_thread, s);
+   //   ALLEGRO_INFO("events thread spawned.\n");
+   //   /* We need to put *some* atom into the ClientMessage we send for
+   //    * faking mouse movements with al_set_mouse_xy - so let's ask X11
+   //    * for one here.
+   //    */
+   //   s->AllegroAtom = XInternAtom(s->x11display, "AllegroAtom", False);
+   //}
 
    s->inhibit_screensaver = false;
 
@@ -65,12 +66,12 @@ static void pi_shutdown_system(void)
    }
    _al_vector_free(&s->displays);
 
-   if (getenv("DISPLAY")) {
-      _al_thread_join(&spi->thread);
-      XCloseDisplay(spi->x11display);
-   }
+   //if (getenv("DISPLAY")) {
+   //   _al_thread_join(&spi->thread);
+   //   XCloseDisplay(spi->x11display);
+   //}
 
-   bcm_host_deinit();
+   //bcm_host_deinit();
 
    raise(SIGINT);
 
@@ -79,17 +80,17 @@ static void pi_shutdown_system(void)
 
 static ALLEGRO_KEYBOARD_DRIVER *pi_get_keyboard_driver(void)
 {
-   if (getenv("DISPLAY")) {
-      return _al_xwin_keyboard_driver();
-   }
+   //if (getenv("DISPLAY")) {
+   //   return _al_xwin_keyboard_driver();
+   //}
    return _al_linux_keyboard_driver_list[0].driver;
 }
 
 static ALLEGRO_MOUSE_DRIVER *pi_get_mouse_driver(void)
 {
-   if (getenv("DISPLAY")) {
-      return _al_xwin_mouse_driver();
-   }
+   //if (getenv("DISPLAY")) {
+   //   return _al_xwin_mouse_driver();
+   //}
    return _al_linux_mouse_driver_list[0].driver;
 }
 

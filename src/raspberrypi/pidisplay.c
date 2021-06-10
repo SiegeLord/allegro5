@@ -1,18 +1,19 @@
 #include <stdio.h>
 
+#include <xf86drm.h>
+#include <xf86drmMode.h>
+
 #include "allegro5/allegro.h"
 #include "allegro5/allegro_opengl.h"
 #include "allegro5/internal/aintern_opengl.h"
 #include "allegro5/internal/aintern_vector.h"
 #include "allegro5/internal/aintern_raspberrypi.h"
-#include "allegro5/internal/aintern_x.h"
-#include "allegro5/internal/aintern_xwindow.h"
 
 #include <GLES/gl.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#include <gbm.h>
 
-#include <bcm_host.h>
 
 #include "picursor.h"
 #define DEFAULT_CURSOR_WIDTH 17
@@ -75,82 +76,82 @@ static void show_cursor(ALLEGRO_DISPLAY_RASPBERRYPI *d)
    int width = d->cursor_width;
    int height = d->cursor_height;
 
-   if (cursor_added == false) {
-      uint32_t unused;
-      cursor_resource = vc_dispmanx_resource_create(VC_IMAGE_ARGB8888, width, height, &unused);
+   //if (cursor_added == false) {
+   //   uint32_t unused;
+   //   cursor_resource = vc_dispmanx_resource_create(VC_IMAGE_ARGB8888, width, height, &unused);
 
-      VC_RECT_T r;
-      r.x = 0;
-      r.y = 0;
-      r.width = width;
-      r.height = height;
+   //   VC_RECT_T r;
+   //   r.x = 0;
+   //   r.y = 0;
+   //   r.width = width;
+   //   r.height = height;
 
-      int dpitch = pot(sizeof(uint32_t) * width);
+   //   int dpitch = pot(sizeof(uint32_t) * width);
 
-      dispman_update = vc_dispmanx_update_start(0);
-      vc_dispmanx_resource_write_data(cursor_resource, VC_IMAGE_ARGB8888, dpitch, d->cursor_data, &r);
-      vc_dispmanx_update_submit_sync(dispman_update);
+   //   dispman_update = vc_dispmanx_update_start(0);
+   //   vc_dispmanx_resource_write_data(cursor_resource, VC_IMAGE_ARGB8888, dpitch, d->cursor_data, &r);
+   //   vc_dispmanx_update_submit_sync(dispman_update);
 
-      ALLEGRO_MOUSE_STATE state;
-      al_get_mouse_state(&state);
+   //   ALLEGRO_MOUSE_STATE state;
+   //   al_get_mouse_state(&state);
 
-      dst_rect.x = state.x+d->cursor_offset_x;
-      dst_rect.y = state.y+d->cursor_offset_y;
-      dst_rect.width = width;
-      dst_rect.height = height;
-      src_rect.x = 0;
-      src_rect.y = 0;
-      src_rect.width = width << 16;
-      src_rect.height = height << 16;
+   //   dst_rect.x = state.x+d->cursor_offset_x;
+   //   dst_rect.y = state.y+d->cursor_offset_y;
+   //   dst_rect.width = width;
+   //   dst_rect.height = height;
+   //   src_rect.x = 0;
+   //   src_rect.y = 0;
+   //   src_rect.width = width << 16;
+   //   src_rect.height = height << 16;
 
-      dispman_update = vc_dispmanx_update_start(0);
+   //   dispman_update = vc_dispmanx_update_start(0);
 
-      cursor_element = vc_dispmanx_element_add(
-         dispman_update,
-         dispman_display,
-         0/*layer*/,
-         &dst_rect,
-         cursor_resource,
-         &src_rect,
-         DISPMANX_PROTECTION_NONE,
-         0 /*alpha*/,
-         0/*clamp*/,
-         0/*transform*/
-      );
+   //   cursor_element = vc_dispmanx_element_add(
+   //      dispman_update,
+   //      dispman_display,
+   //      0/*layer*/,
+   //      &dst_rect,
+   //      cursor_resource,
+   //      &src_rect,
+   //      DISPMANX_PROTECTION_NONE,
+   //      0 /*alpha*/,
+   //      0/*clamp*/,
+   //      0/*transform*/
+   //   );
 
-      vc_dispmanx_update_submit_sync(dispman_update);
+   //   vc_dispmanx_update_submit_sync(dispman_update);
 
-      cursor_added = true;
-   }
-   else {
-      ALLEGRO_DISPLAY *disp = (ALLEGRO_DISPLAY *)d;
-      VC_RECT_T src, dst;
-      src.x = 0;
-      src.y = 0;
-      src.width = d->cursor_width << 16;
-      src.height = d->cursor_height << 16;
-      ALLEGRO_MOUSE_STATE st;
-      al_get_mouse_state(&st);
-      st.x = (st.x+0.5) * d->screen_width / disp->w;
-      st.y = (st.y+0.5) * d->screen_height / disp->h;
-      dst.x = st.x+d->cursor_offset_x;
-      dst.y = st.y+d->cursor_offset_y;
-      dst.width = d->cursor_width;
-      dst.height = d->cursor_height;
-         dispman_update = vc_dispmanx_update_start(0);
-      vc_dispmanx_element_change_attributes(
-         dispman_update,
-         cursor_element,
-         0,
-         0,
-         0,
-         &dst,
-         &src,
-         0,
-         0
-      );
-      vc_dispmanx_update_submit_sync(dispman_update);
-   }
+   //   cursor_added = true;
+   //}
+   //else {
+   //   ALLEGRO_DISPLAY *disp = (ALLEGRO_DISPLAY *)d;
+   //   VC_RECT_T src, dst;
+   //   src.x = 0;
+   //   src.y = 0;
+   //   src.width = d->cursor_width << 16;
+   //   src.height = d->cursor_height << 16;
+   //   ALLEGRO_MOUSE_STATE st;
+   //   al_get_mouse_state(&st);
+   //   st.x = (st.x+0.5) * d->screen_width / disp->w;
+   //   st.y = (st.y+0.5) * d->screen_height / disp->h;
+   //   dst.x = st.x+d->cursor_offset_x;
+   //   dst.y = st.y+d->cursor_offset_y;
+   //   dst.width = d->cursor_width;
+   //   dst.height = d->cursor_height;
+   //      dispman_update = vc_dispmanx_update_start(0);
+   //   vc_dispmanx_element_change_attributes(
+   //      dispman_update,
+   //      cursor_element,
+   //      0,
+   //      0,
+   //      0,
+   //      &dst,
+   //      &src,
+   //      0,
+   //      0
+   //   );
+   //   vc_dispmanx_update_submit_sync(dispman_update);
+   //}
 }
 
 static void hide_cursor(ALLEGRO_DISPLAY_RASPBERRYPI *d)
@@ -161,10 +162,10 @@ static void hide_cursor(ALLEGRO_DISPLAY_RASPBERRYPI *d)
       return;
    }
 
-   dispman_update = vc_dispmanx_update_start(0);
-   vc_dispmanx_element_remove(dispman_update, cursor_element);
-   vc_dispmanx_update_submit_sync(dispman_update);
-   vc_dispmanx_resource_delete(cursor_resource);
+   //dispman_update = vc_dispmanx_update_start(0);
+   //vc_dispmanx_element_remove(dispman_update, cursor_element);
+   //vc_dispmanx_update_submit_sync(dispman_update);
+   //vc_dispmanx_resource_delete(cursor_resource);
    cursor_added = false;
 }
 
@@ -182,7 +183,7 @@ static void setup_gl(ALLEGRO_DISPLAY *d)
 void _al_raspberrypi_get_screen_info(int *dx, int *dy,
    int *screen_width, int *screen_height)
 {
-   graphics_get_display_size(0 /* LCD */, (uint32_t *)screen_width, (uint32_t *)screen_height);
+   //graphics_get_display_size(0 /* LCD */, (uint32_t *)screen_width, (uint32_t *)screen_height);
 
    /* On TV-out the visible area (area used by X and console)
     * is different from that reported by the bcm functions. We
@@ -260,8 +261,138 @@ void _al_raspberrypi_get_screen_info(int *dx, int *dy,
 
 void _al_raspberrypi_get_mouse_scale_ratios(float *x, float *y)
 {
-	*x = mouse_scale_ratio_x;
-	*y = mouse_scale_ratio_y;
+   *x = mouse_scale_ratio_x;
+   *y = mouse_scale_ratio_y;
+}
+
+static int get_resources(int fd, drmModeRes **resources)
+{
+   *resources = drmModeGetResources(fd);
+   if (*resources == NULL)
+      return -1;
+   return 0;
+}
+
+static uint32_t find_crtc_for_encoder(const drmModeRes *resources,
+      const drmModeEncoder *encoder) {
+   int i;
+
+   for (i = 0; i < resources->count_crtcs; i++) {
+      /* possible_crtcs is a bitmask as described here:
+       * https://dvdhrm.wordpress.com/2012/09/13/linux-drm-mode-setting-api
+       */
+      const uint32_t crtc_mask = 1 << i;
+      const uint32_t crtc_id = resources->crtcs[i];
+      if (encoder->possible_crtcs & crtc_mask) {
+         return crtc_id;
+      }
+   }
+
+   /* no match found */
+   return -1;
+}
+
+static uint32_t find_crtc_for_connector(int drm_fd, const drmModeRes *resources,
+      const drmModeConnector *connector) {
+   int i;
+
+   for (i = 0; i < connector->count_encoders; i++) {
+      const uint32_t encoder_id = connector->encoders[i];
+      drmModeEncoder *encoder = drmModeGetEncoder(drm_fd, encoder_id);
+
+      if (encoder) {
+         const uint32_t crtc_id = find_crtc_for_encoder(resources, encoder);
+
+         drmModeFreeEncoder(encoder);
+         if (crtc_id != 0) {
+            return crtc_id;
+         }
+      }
+   }
+
+   /* no match found */
+   return -1;
+}
+
+struct drm_fb {
+	struct gbm_bo *bo;
+	uint32_t fb_id;
+};
+
+static void
+drm_fb_destroy_callback(struct gbm_bo *bo, void *data)
+{
+   int drm_fd = gbm_device_get_fd(gbm_bo_get_device(bo));
+   struct drm_fb *fb = data;
+
+   if (fb->fb_id)
+      drmModeRmFB(drm_fd, fb->fb_id);
+
+   free(fb);
+}
+
+struct drm_fb * drm_fb_get_from_bo(struct gbm_bo *bo)
+{
+   int drm_fd = gbm_device_get_fd(gbm_bo_get_device(bo));
+   struct drm_fb *fb = gbm_bo_get_user_data(bo);
+   uint32_t width, height, format,
+       strides[4] = {0}, handles[4] = {0},
+       offsets[4] = {0}, flags = 0;
+   int ret = -1;
+
+   if (fb)
+      return fb;
+
+   fb = calloc(1, sizeof *fb);
+   fb->bo = bo;
+
+   width = gbm_bo_get_width(bo);
+   height = gbm_bo_get_height(bo);
+   format = gbm_bo_get_format(bo);
+
+   if (gbm_bo_get_modifier && gbm_bo_get_plane_count &&
+       gbm_bo_get_stride_for_plane && gbm_bo_get_offset) {
+
+      uint64_t modifiers[4] = {0};
+      modifiers[0] = gbm_bo_get_modifier(bo);
+      const int num_planes = gbm_bo_get_plane_count(bo);
+      for (int i = 0; i < num_planes; i++) {
+         strides[i] = gbm_bo_get_stride_for_plane(bo, i);
+         handles[i] = gbm_bo_get_handle(bo).u32;
+         offsets[i] = gbm_bo_get_offset(bo, i);
+         modifiers[i] = modifiers[0];
+      }
+
+      if (modifiers[0]) {
+         flags = DRM_MODE_FB_MODIFIERS;
+         printf("Using modifier %" PRIx64 "\n", modifiers[0]);
+      }
+
+      ret = drmModeAddFB2WithModifiers(drm_fd, width, height,
+            format, handles, strides, offsets,
+            modifiers, &fb->fb_id, flags);
+   }
+
+   if (ret) {
+      if (flags)
+         fprintf(stderr, "Modifiers failed!\n");
+
+      memcpy(handles, (uint32_t [4]){gbm_bo_get_handle(bo).u32,0,0,0}, 16);
+      memcpy(strides, (uint32_t [4]){gbm_bo_get_stride(bo),0,0,0}, 16);
+      memset(offsets, 0, 16);
+      ret = drmModeAddFB2(drm_fd, width, height, format,
+            handles, strides, offsets, &fb->fb_id, 0);
+   }
+
+   if (ret) {
+      printf("failed to create fb: %s\n", strerror(errno));
+      free(fb);
+      return NULL;
+   }
+
+   gbm_bo_set_user_data(bo, fb, drm_fb_destroy_callback);
+
+   return fb;
 }
 
 static bool pi_create_display(ALLEGRO_DISPLAY *display)
@@ -269,7 +400,111 @@ static bool pi_create_display(ALLEGRO_DISPLAY *display)
    ALLEGRO_DISPLAY_RASPBERRYPI *d = (void *)display;
    ALLEGRO_EXTRA_DISPLAY_SETTINGS *eds = _al_get_new_display_settings();
 
-   egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+   const char* device = "/dev/dri/card1";
+   int drm_fd = open(device, O_RDWR);
+   //int drm_fd = open("/dev/dri/renderD128", O_RDWR);
+   printf("drm_fd: %d\n", drm_fd);
+   
+   drmModeRes *resources;
+   int ret = get_resources(drm_fd, &resources);
+   if (ret < 0 && errno == EOPNOTSUPP)
+      printf("%s does not look like a modeset device\n", device);
+   if (!resources) {
+      printf("drmModeGetResources failed: %s\n", strerror(errno));
+      return false;
+   }
+   
+   drmModeConnector *connector = NULL;
+   drmModeEncoder *encoder = NULL;
+   int i;
+   for (i = 0; i < resources->count_connectors; i++) {
+      connector = drmModeGetConnector(drm_fd, resources->connectors[i]);
+      if (connector->connection == DRM_MODE_CONNECTED) {
+         /* it's connected, let's use this! */
+         break;
+      }
+      drmModeFreeConnector(connector);
+      connector = NULL;
+   }
+   printf("Z: %p\n", connector);
+   if (!connector) {
+      /* we could be fancy and listen for hotplug events and wait for
+       * a connector..
+       */
+      printf("no connected connector!\n");
+      return false;
+   }
+
+   drmModeModeInfo *mode = NULL;
+   //int area;
+   if (!mode) {
+      for (i = 0; i < connector->count_modes; i++) {
+         drmModeModeInfo *current_mode = &connector->modes[i];
+
+         if (current_mode->type & DRM_MODE_TYPE_PREFERRED && display->h == 0 && display->w == 0) {
+            mode = current_mode;
+            break;
+         }
+
+         printf("mode %d %d\n", current_mode->hdisplay, current_mode->vdisplay);
+         if (current_mode->hdisplay == display->w && current_mode->vdisplay == display->h) {
+             mode = current_mode;
+             break;
+         }
+         //int current_area = current_mode->hdisplay * current_mode->vdisplay;
+         //if (current_area > area) {
+         //   mode = current_mode;
+         //   area = current_area;
+         //}
+      }
+   }
+   if (!mode) {
+      printf("could not find mode!\n");
+      return -1;
+   }
+
+   for (i = 0; i < resources->count_encoders; i++) {
+      encoder = drmModeGetEncoder(drm_fd, resources->encoders[i]);
+      if (encoder->encoder_id == connector->encoder_id)
+         break;
+      drmModeFreeEncoder(encoder);
+      encoder = NULL;
+   }
+
+   uint32_t crtc_id;
+   uint32_t connector_id;
+   int crtc_index;
+
+   if (encoder) {
+      crtc_id = encoder->crtc_id;
+   } else {
+      crtc_id = find_crtc_for_connector(drm_fd, resources, connector);
+      if (crtc_id == 0) {
+         printf("no crtc found!\n");
+         return false;
+      }
+   }
+
+   for (i = 0; i < resources->count_crtcs; i++) {
+      if (resources->crtcs[i] == crtc_id) {
+         crtc_index = i;
+         break;
+      }
+   }
+
+   drmModeFreeResources(resources);
+   connector_id = connector->connector_id;
+
+   struct gbm_device *dev;
+   dev = gbm_create_device(drm_fd);
+   printf("drm_fd: %d dev: %p\n", drm_fd, dev);
+
+
+   printf("A: %s %d\n", __FILE__, __LINE__); fflush(stdout);
+   egl_display = eglGetDisplay(dev);
+   //egl_display = eglGetPlatformDisplay(EGL_PLATFORM_GBM_MESA, dev, NULL);
+   printf("B: %s %d\n", __FILE__, __LINE__); fflush(stdout);
+   fflush(stdout);
    if (egl_display == EGL_NO_DISPLAY) {
       return false;
    }
@@ -288,6 +523,7 @@ static bool pi_create_display(ALLEGRO_DISPLAY *display)
       EGL_BLUE_SIZE, 8,
       EGL_ALPHA_SIZE, 8,
       EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+      EGL_CONFORMANT, EGL_OPENGL_ES_BIT,
       EGL_NONE
    };
 
@@ -316,7 +552,9 @@ static bool pi_create_display(ALLEGRO_DISPLAY *display)
       return false;
    }
 
-   eglBindAPI(EGL_OPENGL_ES_API);
+   if (!eglBindAPI(EGL_OPENGL_ES_API)) {
+        return false;
+   }
 
    int es_ver = (display->flags & ALLEGRO_PROGRAMMABLE_PIPELINE) ?
       2 : 1;
@@ -333,14 +571,20 @@ static bool pi_create_display(ALLEGRO_DISPLAY *display)
       return false;
    }
 
-   static EGL_DISPMANX_WINDOW_T nativewindow;
-   DISPMANX_ELEMENT_HANDLE_T dispman_element;
+   printf("Here: %s %d\n", __FILE__, __LINE__); fflush(stdout);
+   //static EGL_DISPMANX_WINDOW_T nativewindow;
+   //DISPMANX_ELEMENT_HANDLE_T dispman_element;
 
    int dx, dy, screen_width, screen_height;
-   _al_raspberrypi_get_screen_info(&dx, &dy, &screen_width, &screen_height);
+   dx = 0;
+   dy = 0;
+   screen_width = mode->hdisplay;
+   screen_height = mode->vdisplay;
 
    mouse_scale_ratio_x = (float)display->w / screen_width;
    mouse_scale_ratio_y = (float)display->h / screen_height;
+
+   printf("%d %d %d %d\n", dx, dy, screen_width, screen_height);
 
    d->cursor_offset_x = dx;
    d->cursor_offset_y = dy;
@@ -352,35 +596,45 @@ static bool pi_create_display(ALLEGRO_DISPLAY *display)
 
    d->screen_width = screen_width;
    d->screen_height = screen_height;
+   display->w = screen_width;
+   display->h = screen_height;
 
-   src_rect.x = 0;
-   src_rect.y = 0;
-   src_rect.width = display->w << 16;
-   src_rect.height = display->h << 16;
+   uint32_t format = GBM_FORMAT_XRGB8888;
+   struct gbm_surface *surface = gbm_surface_create(dev, screen_width, screen_height,
+                  format,
+                  GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
+   if (!surface) {
+      printf("failed to create gbm surface\n");
+      return false;
+   }
+   // src_rect.x = 0;
+   // src_rect.y = 0;
+   // src_rect.width = display->w << 16;
+   // src_rect.height = display->h << 16;
 
-   dispman_display = vc_dispmanx_display_open(0 /* LCD */);
-   dispman_update = vc_dispmanx_update_start(0);
+   //dispman_display = vc_dispmanx_display_open(0 /* LCD */);
+   //dispman_update = vc_dispmanx_update_start(0);
 
-   dispman_element = vc_dispmanx_element_add (
-      dispman_update,
-      dispman_display,
-      0/*layer*/,
-      &dst_rect,
-      0/*src*/,
-      &src_rect,
-      DISPMANX_PROTECTION_NONE,
-      0 /*alpha*/,
-      0/*clamp*/,
-      DISPMANX_NO_ROTATE/*transform*/
-   );
+   //dispman_element = vc_dispmanx_element_add (
+   //   dispman_update,
+   //   dispman_display,
+   //   0/*layer*/,
+   //   &dst_rect,
+   //   0/*src*/,
+   //   &src_rect,
+   //   DISPMANX_PROTECTION_NONE,
+   //   0 /*alpha*/,
+   //   0/*clamp*/,
+   //   DISPMANX_NO_ROTATE/*transform*/
+   //);
 
-   nativewindow.element = dispman_element;
-   nativewindow.width = display->w;
-   nativewindow.height = display->h;
-   vc_dispmanx_update_submit_sync(dispman_update);
+   //nativewindow.element = dispman_element;
+   //nativewindow.width = display->w;
+   //nativewindow.height = display->h;
+   //vc_dispmanx_update_submit_sync(dispman_update);
 
    egl_window = eglCreateWindowSurface(
-      egl_display, config, &nativewindow, NULL);
+      egl_display, config, (EGLNativeWindowType)surface, NULL);
    if (egl_window == EGL_NO_SURFACE) {
       return false;
    }
@@ -389,9 +643,24 @@ static bool pi_create_display(ALLEGRO_DISPLAY *display)
       return false;
    }
 
-   if (!getenv("DISPLAY")) {
-      _al_evdev_set_mouse_range(0, 0, display->w-1, display->h-1);
+   eglSwapBuffers(egl_display, egl_window);
+   struct gbm_bo *bo;
+   struct drm_fb *fb;
+   bo = gbm_surface_lock_front_buffer(surface);
+   printf("surface: %p bo: %p\n", egl_window, bo);
+   fflush(stdout);
+   fb = drm_fb_get_from_bo(bo);
+   ret = drmModeSetCrtc(drm_fd, crtc_id, fb->fb_id, 0, 0,
+         &connector_id, 1, mode);
+   if (ret) {
+      printf("failed to set mode: %s\n", strerror(errno));
+      return false;
    }
+   d->surface = surface;
+   d->crtc_id = crtc_id;
+   //if (!getenv("DISPLAY")) {
+   //   _al_evdev_set_mouse_range(0, 0, display->w-1, display->h-1);
+   //}
 
    return true;
 }
@@ -423,50 +692,53 @@ static ALLEGRO_DISPLAY *raspberrypi_create_display(int w, int h)
    display->flags |= ALLEGRO_OPENGL;
 #ifdef ALLEGRO_CFG_OPENGLES2
    display->flags |= ALLEGRO_PROGRAMMABLE_PIPELINE;
+   printf("GLES2\n");
 #endif
 #ifdef ALLEGRO_CFG_OPENGLES
    display->flags |= ALLEGRO_OPENGL_ES_PROFILE;
+   printf("GLES\n");
 #endif
+   fflush(stdout);
 
    if (!pi_create_display(display)) {
       // FIXME: cleanup
       return NULL;
    }
 
-   if (getenv("DISPLAY")) {
-      _al_mutex_lock(&system->lock);
-      Window root = RootWindow(
-         system->x11display, DefaultScreen(system->x11display));
-      XWindowAttributes attr;
-      XGetWindowAttributes(system->x11display, root, &attr);
-      d->window = XCreateWindow(
-         system->x11display,
-         root,
-         0,
-         0,
-         attr.width,
-         attr.height,
-         0, 0,
-         InputOnly,
-         DefaultVisual(system->x11display, 0),
-         0,
-         NULL
-      );
-      XGetWindowAttributes(system->x11display, d->window, &attr);
-      XSelectInput(
-         system->x11display,
-         d->window,
-         PointerMotionMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask
-      );
-      XMapWindow(system->x11display, d->window);
-      _al_xwin_reset_size_hints(display);
-      _al_xwin_set_fullscreen_window(display, 2);
-      _al_xwin_set_size_hints(display, INT_MAX, INT_MAX);
-      d->wm_delete_window_atom = XInternAtom(system->x11display,
-         "WM_DELETE_WINDOW", False);
-      XSetWMProtocols(system->x11display, d->window, &d->wm_delete_window_atom, 1);
-      _al_mutex_unlock(&system->lock);
-   }
+   //if (getenv("DISPLAY")) {
+   //   _al_mutex_lock(&system->lock);
+   //   Window root = RootWindow(
+   //      system->x11display, DefaultScreen(system->x11display));
+   //   XWindowAttributes attr;
+   //   XGetWindowAttributes(system->x11display, root, &attr);
+   //   d->window = XCreateWindow(
+   //      system->x11display,
+   //      root,
+   //      0,
+   //      0,
+   //      attr.width,
+   //      attr.height,
+   //      0, 0,
+   //      InputOnly,
+   //      DefaultVisual(system->x11display, 0),
+   //      0,
+   //      NULL
+   //   );
+   //   XGetWindowAttributes(system->x11display, d->window, &attr);
+   //   XSelectInput(
+   //      system->x11display,
+   //      d->window,
+   //      PointerMotionMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask
+   //   );
+   //   XMapWindow(system->x11display, d->window);
+   //   _al_xwin_reset_size_hints(display);
+   //   _al_xwin_set_fullscreen_window(display, 2);
+   //   _al_xwin_set_size_hints(display, INT_MAX, INT_MAX);
+   //   d->wm_delete_window_atom = XInternAtom(system->x11display,
+   //      "WM_DELETE_WINDOW", False);
+   //   XSetWMProtocols(system->x11display, d->window, &d->wm_delete_window_atom, 1);
+   //   _al_mutex_unlock(&system->lock);
+   //}
 
    al_grab_mouse(display);
 
@@ -516,12 +788,12 @@ static void raspberrypi_destroy_display(ALLEGRO_DISPLAY *d)
    eglDestroyContext(egl_display, egl_context);
    eglTerminate(egl_display);
 
-   if (getenv("DISPLAY")) {
-      _al_mutex_lock(&system->lock);
-      XUnmapWindow(system->x11display, pidisplay->window);
-      XDestroyWindow(system->x11display, pidisplay->window);
-      _al_mutex_unlock(&system->lock);
-   }
+   //if (getenv("DISPLAY")) {
+   //   _al_mutex_lock(&system->lock);
+   //   XUnmapWindow(system->x11display, pidisplay->window);
+   //   XDestroyWindow(system->x11display, pidisplay->window);
+   //   _al_mutex_unlock(&system->lock);
+   //}
 
    if (system->mouse_grab_display == d) {
       system->mouse_grab_display = NULL;
@@ -636,10 +908,67 @@ static bool raspberrypi_wait_for_vsync(ALLEGRO_DISPLAY *display)
     return false;
 }
 
+static void page_flip_handler(int fd, unsigned int frame,
+		  unsigned int sec, unsigned int usec, void *data)
+{
+	/* suppress 'unused parameter' warnings */
+	(void)fd, (void)frame, (void)sec, (void)usec;
+
+        //printf("page_flip_handler %d %d %d\n", frame, sec, usec);
+	int *waiting_for_flip = data;
+	*waiting_for_flip = 0;
+}
+
 static void raspberrypi_flip_display(ALLEGRO_DISPLAY *disp)
 {
-   eglSwapBuffers(egl_display, egl_window);
+   bool ret1 = eglSwapBuffers(egl_display, egl_window);
+   //printf("Flipped %d\n", ret1);
+   //fflush(stdout);
 
+   ALLEGRO_DISPLAY_RASPBERRYPI *d = (void *)disp;
+   struct gbm_bo *bo;
+   struct drm_fb *fb;
+   bo = gbm_surface_lock_front_buffer(d->surface);
+   fb = drm_fb_get_from_bo(bo);
+   if (!fb) {
+   	fprintf(stderr, "Failed to get a new framebuffer BO\n");
+        fflush(stderr);
+   	return;
+   }
+   int drm_fd = gbm_device_get_fd(gbm_bo_get_device(bo));
+   bool waiting_for_flip = 1;
+   bool ret = drmModePageFlip(drm_fd, d->crtc_id, fb->fb_id,
+   		DRM_MODE_PAGE_FLIP_EVENT, &waiting_for_flip);
+   if (ret) {
+   	printf("failed to queue page flip: %s\n", strerror(errno));
+   	return;
+   }
+   
+   fd_set fds;
+   drmEventContext evctx = {
+     .version = 2,
+     .page_flip_handler = page_flip_handler,
+   };
+   while (waiting_for_flip) {
+   	FD_ZERO(&fds);
+   	FD_SET(0, &fds);
+   	FD_SET(drm_fd, &fds);
+   
+   	ret = select(drm_fd + 1, &fds, NULL, NULL, NULL);
+   	if (ret < 0) {
+   		printf("select err: %s\n", strerror(errno));
+   		return;
+   	} else if (ret == 0) {
+   		printf("select timeout!\n");
+   		return;
+   	} else if (FD_ISSET(0, &fds)) {
+   		printf("user interrupted!\n");
+   		return;
+   	}
+   	drmHandleEvent(drm_fd, &evctx);
+   }
+
+   gbm_surface_release_buffer(d->surface, bo);
    if (cursor_added) {
       show_cursor((ALLEGRO_DISPLAY_RASPBERRYPI *)disp);
    }

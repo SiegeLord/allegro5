@@ -190,12 +190,15 @@ set(ALLEGRO_SRC_RASPBERRYPI_FILES
    src/linux/lmsedrv.c
    src/linux/lhaptic.c
    src/linux/ljoynu.c
+   src/raspberrypi/pisystem.c
+   src/raspberrypi/pidisplay.c
+   )
+
+set(ALLEGRO_SRC_RASPBERRYPI_X_FILES
    src/x/xevents.c
    src/x/xkeyboard.c
    src/x/xmousenu.c
    src/x/xwindow.c
-   src/raspberrypi/pisystem.c
-   src/raspberrypi/pidisplay.c
    )
 
 set(ALLEGRO_SRC_SDL_FILES

@@ -15,6 +15,7 @@ typedef struct ALLEGRO_SYSTEM_RASPBERRYPI {
    _AL_THREAD thread; /* background thread. */
    ALLEGRO_DISPLAY *mouse_grab_display; /* Best effort: may be inaccurate. */
    bool inhibit_screensaver; /* Should we inhibit the screensaver? */
+   bool screen_saver_query_available;
    Atom AllegroAtom;
 } ALLEGRO_SYSTEM_RASPBERRYPI;
 
@@ -34,6 +35,8 @@ typedef struct ALLEGRO_DISPLAY_RASPBERRYPI {
    int cursor_height;
    int cursor_offset_x, cursor_offset_y;
    Atom wm_delete_window_atom;
+   struct gbm_surface* surface;
+   int crtc_id;
 } ALLEGRO_DISPLAY_RASPBERRYPI;
 
 typedef struct ALLEGRO_MOUSE_CURSOR_RASPBERRYPI {

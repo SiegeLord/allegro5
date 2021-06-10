@@ -32,7 +32,7 @@
 
 ALLEGRO_DEBUG_CHANNEL("display")
 
-
+#include <stdio.h>
 /* Function: al_create_display
  */
 ALLEGRO_DISPLAY *al_create_display(int w, int h)
@@ -107,6 +107,8 @@ ALLEGRO_DISPLAY *al_create_display(int w, int h)
          return NULL;
       }
       al_use_shader(display->default_shader);
+      printf("Used default shader\n");
+      fflush(stdout);
    }
 
    /* Clear the screen */

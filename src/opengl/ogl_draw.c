@@ -224,7 +224,7 @@ static void tex_ptr_off(ALLEGRO_DISPLAY *display)
 #endif
    }
 }
-
+#include <stdio.h>
 static void ogl_clear(ALLEGRO_DISPLAY *d, ALLEGRO_COLOR *color)
 {
    ALLEGRO_DISPLAY *ogl_disp = (void *)d;
@@ -247,8 +247,11 @@ static void ogl_clear(ALLEGRO_DISPLAY *d, ALLEGRO_COLOR *color)
 
    al_unmap_rgba_f(*color, &r, &g, &b, &a);
 
+   //printf("GLError %f %f %f %f %d\n", r, g, b, a, glGetError());
    glClearColor(r, g, b, a);
+   //printf("GLError %d\n", glGetError());
    glClear(GL_COLOR_BUFFER_BIT);
+   //printf("GLError %d\n", glGetError());
 }
 
 

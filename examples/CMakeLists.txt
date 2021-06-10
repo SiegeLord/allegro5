@@ -104,6 +104,7 @@ example(ex_path)
 example(ex_path_test)
 example(ex_user_events)
 example(ex_inject_events)
+example(bouncer)
 
 if(NOT MSVC)
     # UTF-8 strings are problematic under MSVC.
