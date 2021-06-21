@@ -11,6 +11,8 @@ endif(DRM_INCLUDE_DIR)
 
 find_path(DRM_INCLUDE_DIR drm.h PATH_SUFFIXES libdrm)
 
+find_library(DRM_LIBRARY NAMES drm)
+
 # Handle the QUIETLY and REQUIRED arguments and set DRM_FOUND
 # to TRUE if all listed variables are TRUE.
 include(FindPackageHandleStandardArgs)
