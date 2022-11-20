@@ -1,5 +1,7 @@
 name: Update docs
-on: [push]
+on:
+  push:
+    branches: [master]
 permissions:
   contents: write
 jobs:
@@ -22,7 +24,7 @@ jobs:
 
       - name: Install and Build
         run: |
-            sudo apt-get install -y libgl1-mesa-dev libglu-dev
+            sudo apt-get install -y libgl1-mesa-dev libglu-dev libxcursor-dev
             sudo dpkg -i pandoc-2.19.2-1-amd64.deb
             mkdir build
             cd build
