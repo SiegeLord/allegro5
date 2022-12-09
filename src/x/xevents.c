@@ -97,6 +97,7 @@ static void process_x11_event(ALLEGRO_SYSTEM_XGLX *s, XEvent event)
             const long detail = event.xclient.data.l[2];
             const long data1 = event.xclient.data.l[3];
             const long data2 = event.xclient.data.l[4];
+            ALLEGRO_DEBUG("Embed detail: %ld data1: %ld data2: %ld\n", detail, data1, data2);
 
             (void)xtime;
             (void)detail;
@@ -130,10 +131,12 @@ static void process_x11_event(ALLEGRO_SYSTEM_XGLX *s, XEvent event)
       case FocusIn:
          _al_xwin_display_switch_handler(&d->display, &event.xfocus);
          _al_xwin_keyboard_switch_handler(&d->display, true);
+         ALLEGRO_DEBUG("FocusIn\n");
          break;
       case FocusOut:
          _al_xwin_display_switch_handler(&d->display, &event.xfocus);
          _al_xwin_keyboard_switch_handler(&d->display, false);
+         ALLEGRO_DEBUG("FocusOut\n");
          break;
       case ConfigureNotify:
          _al_xglx_display_configure_event(&d->display,  &event);

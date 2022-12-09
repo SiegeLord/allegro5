@@ -2,6 +2,7 @@
 #include "allegro5/allegro.h"
 #include "allegro5/allegro_font.h"
 #include "allegro5/allegro_primitives.h"
+#include "allegro5/allegro_native_dialog.h"
 
 #include "common.c"
 
@@ -38,8 +39,10 @@ int main(int argc, char **argv)
    al_install_mouse();
    al_install_keyboard();
    al_init_font_addon();
+   al_init_native_dialog_addon();
 
    al_set_new_display_flags(ALLEGRO_RESIZABLE);
+   al_set_new_display_flags(ALLEGRO_RESIZABLE | ALLEGRO_GTK_TOPLEVEL);
    display = al_create_display(640, 480);
    if (!display) {
       abort_example("Error creating display\n");

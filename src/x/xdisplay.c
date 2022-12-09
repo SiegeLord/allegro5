@@ -181,12 +181,15 @@ static bool xdpy_create_display_window(ALLEGRO_SYSTEM_XGLX *system,
       StructureNotifyMask |
       EnterWindowMask |
       LeaveWindowMask |
-      FocusChangeMask |
       ExposureMask |
       PropertyChangeMask |
       ButtonPressMask |
       ButtonReleaseMask |
       PointerMotionMask;
+   
+   if (!(display->flags & ALLEGRO_GTK_TOPLEVEL_INTERNAL)) {
+      swa.event_mask |= FocusChangeMask;
+   }
 
    /* For a non-compositing window manager, a black background can look
     * less broken if the application doesn't react to expose events fast
@@ -1108,6 +1111,7 @@ void _al_xwin_display_switch_handler(ALLEGRO_DISPLAY *display,
    /* Anything but NotifyNormal seem to indicate the switch is not "real".
     * TODO: Find out details?
     */
+   ALLEGRO_DEBUG("Switch type: %d\n", xevent->mode);
    if (xevent->mode != NotifyNormal)
       return;
 
