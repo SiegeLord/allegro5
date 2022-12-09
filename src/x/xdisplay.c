@@ -1111,23 +1111,36 @@ void _al_xwin_display_switch_handler(ALLEGRO_DISPLAY *display,
    /* Anything but NotifyNormal seem to indicate the switch is not "real".
     * TODO: Find out details?
     */
-   ALLEGRO_DEBUG("Switch type: %d\n", xevent->mode);
    switch (xevent->mode)
    {
       case NotifyNormal:
-         ALLEGRO_DEBUG("NotifyNormal\n");
+         ALLEGRO_DEBUG("Mode: NotifyNormal\n");
          break;
       case NotifyGrab:
-         ALLEGRO_DEBUG("NotifyGrab\n");
+         ALLEGRO_DEBUG("Mode: NotifyGrab\n");
          break;
       case NotifyUngrab:
-         ALLEGRO_DEBUG("NotifyUngrab\n");
-         break;
-      case NotifyNonlinear:
-         ALLEGRO_DEBUG("NotifyNonlinear\n");
+         ALLEGRO_DEBUG("Mode: NotifyUngrab\n");
          break;
       default:
-         ALLEGRO_DEBUG("Unknown\n");
+         ALLEGRO_DEBUG("Mode: Unknown\n");
+   }
+   switch (xevent->detail)
+   {
+      case NotifyNormal:
+         ALLEGRO_DEBUG("Detail: NotifyAncestor\n");
+         break;
+      case NotifyInferior:
+         ALLEGRO_DEBUG("Detail: NotifyInferior\n");
+         break;
+      case NotifyVirtual:
+         ALLEGRO_DEBUG("Detail: NotifyVirtual\n");
+         break;
+      case NotifyNonlinear:
+         ALLEGRO_DEBUG("Detail: NotifyNonlinear\n");
+         break;
+      default:
+         ALLEGRO_DEBUG("Detail: Unknown\n");
    }
    if (xevent->mode != NotifyNormal)
       return;
