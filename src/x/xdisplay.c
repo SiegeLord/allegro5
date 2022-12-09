@@ -1122,6 +1122,9 @@ void _al_xwin_display_switch_handler(ALLEGRO_DISPLAY *display,
       case NotifyUngrab:
          ALLEGRO_DEBUG("Mode: NotifyUngrab\n");
          break;
+      case NotifyWhileGrabbed:
+         ALLEGRO_DEBUG("Mode: NotifyWhileGrabbed\n");
+         break;
       default:
          ALLEGRO_DEBUG("Mode: Unknown\n");
    }
