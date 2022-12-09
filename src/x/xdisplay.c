@@ -1112,6 +1112,23 @@ void _al_xwin_display_switch_handler(ALLEGRO_DISPLAY *display,
     * TODO: Find out details?
     */
    ALLEGRO_DEBUG("Switch type: %d\n", xevent->mode);
+   switch (xevent->mode)
+   {
+      case NotifyNormal:
+         ALLEGRO_DEBUG("NotifyNormal\n");
+         break;
+      case NotifyGrab:
+         ALLEGRO_DEBUG("NotifyGrab\n");
+         break;
+      case NotifyUngrab:
+         ALLEGRO_DEBUG("NotifyUngrab\n");
+         break;
+      case NotifyNonlinear:
+         ALLEGRO_DEBUG("NotifyNonlinear\n");
+         break;
+      default:
+         ALLEGRO_DEBUG("Unknown\n");
+   }
    if (xevent->mode != NotifyNormal)
       return;
 

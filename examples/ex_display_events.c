@@ -42,7 +42,7 @@ int main(int argc, char **argv)
    al_init_native_dialog_addon();
 
    al_set_new_display_flags(ALLEGRO_RESIZABLE);
-   al_set_new_display_flags(ALLEGRO_RESIZABLE | ALLEGRO_GTK_TOPLEVEL);
+   //~ al_set_new_display_flags(ALLEGRO_RESIZABLE | ALLEGRO_GTK_TOPLEVEL);
    display = al_create_display(640, 480);
    if (!display) {
       abort_example("Error creating display\n");

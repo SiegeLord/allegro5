@@ -129,14 +129,14 @@ static void process_x11_event(ALLEGRO_SYSTEM_XGLX *s, XEvent event)
          _al_xwin_mouse_switch_handler(&d->display, &event.xcrossing);
          break;
       case FocusIn:
+         ALLEGRO_DEBUG("FocusIn\n");
          _al_xwin_display_switch_handler(&d->display, &event.xfocus);
          _al_xwin_keyboard_switch_handler(&d->display, true);
-         ALLEGRO_DEBUG("FocusIn\n");
          break;
       case FocusOut:
+         ALLEGRO_DEBUG("FocusOut\n");
          _al_xwin_display_switch_handler(&d->display, &event.xfocus);
          _al_xwin_keyboard_switch_handler(&d->display, false);
-         ALLEGRO_DEBUG("FocusOut\n");
          break;
       case ConfigureNotify:
          _al_xglx_display_configure_event(&d->display,  &event);
