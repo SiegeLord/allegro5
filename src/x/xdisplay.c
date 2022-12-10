@@ -1145,10 +1145,8 @@ void _al_xwin_display_switch_handler(ALLEGRO_DISPLAY *display,
       default:
          ALLEGRO_DEBUG("Detail: Unknown\n");
    }
-   if (xevent->mode != NotifyNormal)
-      return;
-
-   _al_xwin_display_switch_handler_inner(display, (xevent->type == FocusIn));
+   if (xevent->mode == NotifyNormal || xevent->mode == NotifyWhileGrabbed)
+      _al_xwin_display_switch_handler_inner(display, (xevent->type == FocusIn));
 }
 
 
