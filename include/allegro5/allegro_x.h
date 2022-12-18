@@ -32,6 +32,8 @@
 AL_FUNC(XID, al_get_x_window_id, (ALLEGRO_DISPLAY *display));
 #if defined(ALLEGRO_UNSTABLE) || defined(ALLEGRO_INTERNAL_UNSTABLE) || defined(ALLEGRO_SRC)
 AL_FUNC(bool, al_x_set_initial_icon, (ALLEGRO_BITMAP *bitmap));
+AL_FUNC(Display*, al_get_x_display_1, (void));
+AL_FUNC(Display*, al_get_x_display_2, (void));
 #endif
 
 #ifdef __cplusplus

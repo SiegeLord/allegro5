@@ -308,6 +308,18 @@ static int xglx_get_monitor_dpi(int adapter)
    return sqrt(dpi_hori * dpi_vert);
 }
 
+Display *al_get_x_display_1(void)
+{
+   ALLEGRO_SYSTEM_XGLX *system = (ALLEGRO_SYSTEM_XGLX *)al_get_system_driver();
+   return system->x11display;
+}
+
+Display *al_get_x_display_2(void)
+{
+   ALLEGRO_SYSTEM_XGLX *system = (ALLEGRO_SYSTEM_XGLX *)al_get_system_driver();
+   return system->gfxdisplay;
+}
+
 /* Internal function to get a reference to this driver. */
 ALLEGRO_SYSTEM_INTERFACE *_al_system_xglx_driver(void)
 {
