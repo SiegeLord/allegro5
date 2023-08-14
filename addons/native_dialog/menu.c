@@ -754,7 +754,7 @@ ALLEGRO_MENU *al_get_display_menu(ALLEGRO_DISPLAY *display)
 
    return NULL;
 }
- 
+#include <stdio.h>
 /* Function: al_set_display_menu
  */
 bool al_set_display_menu(ALLEGRO_DISPLAY *display, ALLEGRO_MENU *menu)
@@ -822,6 +822,8 @@ bool al_set_display_menu(ALLEGRO_DISPLAY *display, ALLEGRO_MENU *menu)
          dm = _al_vector_alloc_back(&display_menus);
 
       if (automatic_menu_display_resize && menu_height > 0) {
+         printf("Automatic resize\n");
+         fflush(stdout);
          /* Temporarily disable the constraints so we don't send a RESIZE_EVENT. */
          bool old_constraints = display->use_constraints;
          display->use_constraints = false;

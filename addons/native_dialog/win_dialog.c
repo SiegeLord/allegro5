@@ -696,7 +696,7 @@ void _al_append_native_text_log(ALLEGRO_NATIVE_DIALOG *textlog)
       PostMessage(textlog->window, WM_USER, (WPARAM)textlog, 0);
    }
 }
-
+#include <stdio.h>
 static bool menu_callback(ALLEGRO_DISPLAY *display, UINT msg, WPARAM wParam, LPARAM lParam,
                              LPARAM* result, void *userdata)
 {
@@ -742,11 +742,15 @@ static bool menu_callback(ALLEGRO_DISPLAY *display, UINT msg, WPARAM wParam, LPA
       return true;
    }
    else if (msg == WM_SHOW_MENU) {
+      printf("WM_SHOW_MENU\n");
+      fflush(stdout);
       ALLEGRO_MENU *menu = (ALLEGRO_MENU *) lParam;
       SetMenu(al_get_win_window_handle(display), (HMENU) menu->extra1);
       return true;
    }
    else if (msg == WM_SIZE) {
+      printf("WM_SIZE\n");
+      fflush(stdout);
       ALLEGRO_DEBUG("Got the WM_SIZE event.\n");
       got_wm_size_event = true;
       al_signal_cond(wm_size_cond);

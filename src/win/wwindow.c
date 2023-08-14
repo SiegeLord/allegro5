@@ -43,6 +43,7 @@
 #include "allegro5/internal/aintern_joystick.h"
 #include "allegro5/internal/aintern_wjoydxnu.h"
 #include "allegro5/platform/aintwin.h"
+#include <stdio.h>
 
 
 ALLEGRO_DEBUG_CHANNEL("wwindow")
@@ -146,7 +147,7 @@ static void _al_win_get_window_center(
    *out_x = win_size.left;
    *out_y = win_size.top;
 }
-
+#include <stdio.h>
 HWND _al_win_create_window(ALLEGRO_DISPLAY *display, int width, int height, int flags)
 {
    HWND my_window;
@@ -165,6 +166,8 @@ HWND _al_win_create_window(ALLEGRO_DISPLAY *display, int width, int height, int 
    display_flags_to_window_styles(flags, &style, &ex_style);
 
    al_get_new_window_position(&pos_x, &pos_y);
+   printf("A: %d %d\n", pos_x, pos_y);
+   fflush(stdout);
    if ((flags & ALLEGRO_FULLSCREEN) || (flags & ALLEGRO_FULLSCREEN_WINDOW)) {
       pos_x = pos_y = 0;
    }
@@ -198,14 +201,21 @@ HWND _al_win_create_window(ALLEGRO_DISPLAY *display, int width, int height, int 
    tsize = (wi.rcClient.top - wi.rcWindow.top);
    rsize = (wi.rcWindow.right - wi.rcClient.right);
    bsize = (wi.rcWindow.bottom - wi.rcClient.bottom);
+   printf("B: %d %d\n", lsize, tsize);
+   fflush(stdout);
+
+   HWND desktop = GetDesktopWindow();
+   RECT r;
+   GetWindowRect(desktop, &r);
+   printf("Desktop: %d %d %d %d\n", r.left, r.right, r.top, r.bottom);
 
    SetWindowPos(my_window, 0, 0, 0,
       width+lsize+rsize,
       height+tsize+bsize,
       SWP_NOZORDER | SWP_NOMOVE);
-   SetWindowPos(my_window, 0, pos_x-lsize, pos_y-tsize,
-      0, 0,
-      SWP_NOZORDER | SWP_NOSIZE);
+   //SetWindowPos(my_window, 0, pos_x-0*lsize, pos_y-0*tsize,
+   //   0, 0,
+   //   SWP_NOZORDER | SWP_NOSIZE);
 
    if (flags & ALLEGRO_FRAMELESS) {
       SetWindowLong(my_window, GWL_STYLE, WS_VISIBLE);
@@ -318,10 +328,12 @@ static void win_generate_resize_event(ALLEGRO_DISPLAY_WIN *win_display)
    w = wi.rcClient.right - wi.rcClient.left;
    h = wi.rcClient.bottom - wi.rcClient.top;
 
+   printf("resize: %d %d %d %d\n", x, y, w, h);
+   fflush(stdout);
    /* Don't generate events when restoring after minimise. */
    if (w == 0 && h == 0 && x == -32000 && y == -32000)
       return;
-
+   
    /* Always generate resize event when constraints are used.
     * This is needed because d3d_acknowledge_resize() updates d->w, d->h
     * before this function will be called.
@@ -965,6 +977,8 @@ static LRESULT CALLBACK window_callback(HWND hWnd, UINT message,
          }
          return 0;
       case WM_ENTERSIZEMOVE:
+         printf("WM_ENTERSIZEMOVE\n");
+         fflush(stdout);
          /* DefWindowProc for WM_ENTERSIZEMOVE enters a modal loop, which also
           * ends up blocking the loop in d3d_display_thread_proc (which is
           * where we are called from, if using D3D).  Rather than batching up
@@ -977,6 +991,8 @@ static LRESULT CALLBACK window_callback(HWND hWnd, UINT message,
          }
          break;
       case WM_EXITSIZEMOVE:
+         printf("WM_EXITSIZEMOVE\n");
+         fflush(stdout);
          if (resize_postponed) {
             win_generate_resize_event(win_display);
             win_display->ignore_resize = false;

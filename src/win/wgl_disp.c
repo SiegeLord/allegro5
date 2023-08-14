@@ -1350,7 +1350,7 @@ static void wgl_update_display_region(ALLEGRO_DISPLAY *d,
    }
    wgl_flip_display(d);
 }
-
+#include <stdio.h>
 
 static bool wgl_resize_helper(ALLEGRO_DISPLAY *d, int width, int height)
 {
@@ -1427,7 +1427,10 @@ static bool wgl_resize_helper(ALLEGRO_DISPLAY *d, int width, int height)
       wi.cbSize = sizeof(WINDOWINFO);
       GetWindowInfo(win_disp->window, &wi);
 
+      // TODO: Use AdjustWindowsRectExForDPI?
       AdjustWindowRectEx(&win_size, wi.dwStyle, GetMenu(win_disp->window) ? TRUE : FALSE, wi.dwExStyle);
+      printf("here2 %ld %ld\n", win_size.right - win_size.left, win_size.bottom - win_size.top);
+      fflush(stdout);
 
       if (!SetWindowPos(win_disp->window, HWND_TOP,
          0, 0,
