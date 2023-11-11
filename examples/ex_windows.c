@@ -8,7 +8,15 @@
 const int W = 400;
 const int H = 200;
 
-
+ALLEGRO_MENU_INFO main_menu_info[] = {
+   ALLEGRO_START_OF_MENU("&File", 3),
+      { "&Open", 1, 0, NULL },
+      ALLEGRO_MENU_SEPARATOR,
+      { "E&xit", 2, 0, NULL },
+      ALLEGRO_END_OF_MENU,
+   ALLEGRO_END_OF_MENU,
+};
+      
 int main(int argc, char **argv)
 {
    ALLEGRO_DISPLAY *displays[2];
@@ -33,6 +41,7 @@ int main(int argc, char **argv)
 
    al_install_mouse();
    al_install_keyboard();
+   al_init_native_dialog_addon();
    al_init_font_addon();
    open_log();
 
@@ -51,8 +60,8 @@ int main(int argc, char **argv)
 
    // center the first window
    ALLEGRO_MONITOR_INFO init_info = info[0];
-   x = (init_info.x1 + init_info.x2 - W) / 2;
-   y = (init_info.y1 + init_info.y2 - H) / 2;
+   x = 100;//(init_info.x1 + init_info.x2 - W) / 2;
+   y = 200;//(init_info.y1 + init_info.y2 - H) / 2;
    jump_x[0] = x;
    jump_y[0] = y;
    jump_adapter[0] = 0;
@@ -60,8 +69,10 @@ int main(int argc, char **argv)
    al_set_new_window_position(x, y);
    al_set_new_window_title("Window 1");
 
-   al_set_new_display_flags(ALLEGRO_RESIZABLE);
+   al_set_new_display_flags(ALLEGRO_RESIZABLE | ALLEGRO_GTK_TOPLEVEL);
    displays[0] = al_create_display(W, H);
+   ALLEGRO_MENU *menu = al_build_menu(main_menu_info);
+   al_set_display_menu(displays[0], menu);
 
    // use the default position for the second window
    jump_x[1] = INT_MAX;

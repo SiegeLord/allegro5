@@ -395,10 +395,10 @@ XID al_get_x_window_id(ALLEGRO_DISPLAY *display)
    ASSERT(display != NULL);
    return ((ALLEGRO_DISPLAY_XGLX*)display)->window;
 }
-
+#include <stdio.h>
 
 // Note: this only seems to work after the window has been mapped
-void _al_xwin_get_borders(ALLEGRO_DISPLAY *display) {
+void _al_xwin_get_borders(ALLEGRO_DISPLAY *display, Window window) {
    ALLEGRO_DISPLAY_XGLX *glx = (ALLEGRO_DISPLAY_XGLX *)display;
    ALLEGRO_SYSTEM_XGLX *system = (void *)al_get_system_driver();
    Display *x11 = system->x11display;
@@ -408,7 +408,8 @@ void _al_xwin_get_borders(ALLEGRO_DISPLAY *display) {
    unsigned long nitems, bytes_after;
    unsigned char *property;
    Atom frame_extents = X11_ATOM(_NET_FRAME_EXTENTS);
-   if (XGetWindowProperty(x11, glx->window,
+   printf("XID: %x\n", window); fflush(stdout);
+   if (XGetWindowProperty(x11, window,
          frame_extents, 0, 16, 0, XA_CARDINAL,
          &type, &format, &nitems, &bytes_after, &property) == Success) {
       if (type != None && nitems == 4) {
@@ -417,15 +418,18 @@ void _al_xwin_get_borders(ALLEGRO_DISPLAY *display) {
          glx->border_top = (int)((long *)property)[2];
          glx->border_bottom = (int)((long *)property)[3];
          glx->borders_known = true;
+         printf("Got extents\n"); fflush(stdout);
          ALLEGRO_DEBUG("_NET_FRAME_EXTENTS: %d %d %d %d\n", glx->border_left, glx->border_top,
             glx->border_right, glx->border_bottom);
       }
       else {
+         printf("Unexpected %lu\n", nitems); fflush(stdout);
          ALLEGRO_DEBUG("Unexpected _NET_FRAME_EXTENTS format: nitems=%lu\n", nitems);
       }
       XFree(property);
    }
    else {
+      printf("Could not read\n"); fflush(stdout);
       ALLEGRO_DEBUG("Could not read _NET_FRAME_EXTENTS\n");
    }
 }

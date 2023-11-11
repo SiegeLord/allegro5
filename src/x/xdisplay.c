@@ -229,6 +229,7 @@ static bool xdpy_create_display_window(ALLEGRO_SYSTEM_XGLX *system,
       }
    }
 
+   printf("x_off/y_off: %d %d\n", x_off, y_off); fflush(stdout);
    d->window = XCreateWindow(system->x11display,
       RootWindow(system->x11display, d->xvinfo->screen),
       x_off != INT_MAX ? x_off : 0,
@@ -1032,7 +1033,7 @@ static bool xdpy_resize_display(ALLEGRO_DISPLAY *d, int w, int h)
 
    return glx->overridable_vt->resize_display(d, w, h);
 }
-
+#include <stdio.h>
 
 void _al_xglx_display_configure(ALLEGRO_DISPLAY *d, int x, int y,
    int width, int height, bool setglxy)
@@ -1042,7 +1043,8 @@ void _al_xglx_display_configure(ALLEGRO_DISPLAY *d, int x, int y,
    ALLEGRO_EVENT_SOURCE *es = &glx->display.es;
    _al_event_source_lock(es);
 
-   _al_xwin_get_borders(d);
+   _al_xwin_get_borders(d, glx->window);
+   printf("Here\n"); fflush(stdout);
 
    /* Generate a resize event if the size has changed non-programmatically.
     * We cannot asynchronously change the display size here yet, since the user

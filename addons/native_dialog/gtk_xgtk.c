@@ -10,6 +10,7 @@
 #include "allegro5/internal/aintern_xdisplay.h"
 #include "allegro5/internal/aintern_xevents.h"
 #include "allegro5/internal/aintern_xsystem.h"
+#include "allegro5/internal/aintern_xwindow.h"
 
 #include "gtk_dialog.h"
 #include "gtk_xgtk.h"
@@ -23,6 +24,8 @@ typedef struct ARGS_CREATE
    ALLEGRO_DISPLAY_XGLX *display;
    int w;
    int h;
+   int init_x;
+   int init_y;
    const char *title;
 } ARGS_CREATE;
 
@@ -115,6 +118,9 @@ static gboolean do_create_display_hook(gpointer data)
 
    gtk_window_set_title(GTK_WINDOW(window), args->title);
 
+   if (args->init_x != INT_MAX && args->init_y != INT_MAX)
+      gtk_window_move(GTK_WINDOW(window), args->init_x, args->init_y);
+
    gtk_widget_show_all(window);
 
    if (display->flags & ALLEGRO_RESIZABLE) {
@@ -164,6 +170,7 @@ static bool xgtk_create_display_hook(ALLEGRO_DISPLAY *display, int w, int h)
    args.w = w;
    args.h = h;
    args.title = al_get_new_window_title();
+   al_get_new_window_position(&args.init_x, &args.init_y);
 
    return _al_gtk_wait_for_args(do_create_display_hook, &args);
 }
@@ -185,7 +192,9 @@ static gboolean xgtk_handle_configure_event(GtkWidget *widget,
    ALLEGRO_DISPLAY_XGLX *d = (ALLEGRO_DISPLAY_XGLX *)display;
    (void)widget;
    (void)event;
-
+   printf("GTK configure\n"); fflush(stdout);
+   GdkWindow *gdk_window = gtk_widget_get_window(d->gtk->gtkwindow);
+   _al_xwin_get_borders(display, gdk_x11_window_get_xid(gdk_window));
    /* Update our idea of the window position.
     * event->x, event->y is incorrect.
     */
