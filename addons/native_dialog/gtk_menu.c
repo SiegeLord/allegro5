@@ -452,9 +452,23 @@ bool _al_show_popup_menu(ALLEGRO_DISPLAY *display, ALLEGRO_MENU *menu)
    return _al_gtk_wait_for_args(do_show_popup_menu, &args);
 }
 
-int _al_get_menu_display_height(void)
+int _al_get_menu_display_height(ALLEGRO_MENU *menu)
 {
-   return 0;
+  // TODO: do this in a separate thread, perhaps this needs to be populated
+  // when showing the menu (and also stored in the display so resizes work)
+  GtkWidget *menu_bar = menu->extra1;
+  GtkAllocation alloc;
+  int height = 0;
+  while (true) {
+    gtk_widget_get_allocation(menu_bar, &alloc);
+    height = alloc.height;
+    if (height > 1)
+       break;
+    else
+       al_rest(0.01);
+    printf("widget size is currently %dx%d\n",alloc.width, alloc.height); fflush(stdout);
+  };
+  return height;
 }
 
 /* vim: set sts=3 sw=3 et: */
