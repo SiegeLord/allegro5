@@ -1473,8 +1473,10 @@ static void *d3d_display_thread_proc(void *arg)
       al_rest(0.001);
 
       if (PeekMessage(&msg, NULL, 0, 0, FALSE)) {
-         if (GetMessage(&msg, NULL, 0, 0) != 0)
+         if (GetMessage(&msg, NULL, 0, 0) != 0) {
+            TranslateMessage(&msg);
             DispatchMessage(&msg);
+         }
          else
             break;                  /* WM_QUIT received or error (GetMessage returned -1)  */
       }

@@ -32,6 +32,7 @@ static bool installed = false;
 static ALLEGRO_KEYBOARD the_keyboard;
 static ALLEGRO_KEYBOARD_STATE the_state;
 static int modifiers = 0;
+static int surrogate = 0;
 
 /* lookup table for converting virtualkey VK_* codes into Allegro ALLEGRO_KEY_* codes */
 /* For handling of extended keys, extkey_to_keycode() takes priority over this. */
@@ -322,6 +323,61 @@ static void update_toggle_modifiers(void)
 }
 
 
+/* Some unicode characters are passed as pairs of events. We detect
+ * them based on the fact that the individual characters will be
+ * members of a surrogate pair.
+ */
+void _al_win_kbd_handle_char(int scode, int unichar, bool extended,
+                             bool repeated, ALLEGRO_DISPLAY_WIN *win_disp)
+{
+   ALLEGRO_DISPLAY *display = (ALLEGRO_DISPLAY *)win_disp;
+   int my_code;
+   int vcode;
+
+   if (!installed)
+      return;
+
+   if ((unichar >= 0xD800) && (unichar <= 0xDBFF)) {
+      surrogate = unichar;
+   }
+   else {
+      if ((unichar >= 0xDC00) && (unichar <= 0xDFFF)) {
+         unichar = ((surrogate - 0xD800) << 10) + (unichar - 0xDC00) + 0x0010000;
+         surrogate = 0;
+      }
+
+      vcode = MapVirtualKey(scode, MAPVK_VSC_TO_VK_EX);
+
+      my_code = 0;
+      if (extended)
+         my_code = extkey_to_keycode(vcode);
+      else
+         my_code = hw_to_mycode[vcode];
+
+      /* Send char events, but not for modifier keys or dead keys. */
+      if (my_code < ALLEGRO_KEY_MODIFIERS) {
+         ALLEGRO_EVENT event;
+
+         bool actual_repeat = repeated && _AL_KEYBOARD_STATE_KEY_DOWN(the_state, my_code);
+                              _AL_KEYBOARD_STATE_SET_KEY_DOWN(the_state, my_code);
+         _al_event_source_lock(&the_keyboard.es);
+         event.keyboard.timestamp = al_get_time();
+         event.keyboard.display = display;
+         event.keyboard.keycode = my_code;
+         event.keyboard.type = ALLEGRO_EVENT_KEY_CHAR;
+         update_toggle_modifiers();
+         event.keyboard.modifiers = modifiers;
+         event.keyboard.repeat = actual_repeat;
+         event.keyboard.unichar = unichar;
+         _al_event_source_emit_event(&the_keyboard.es, &event);
+
+         _al_event_source_unlock(&the_keyboard.es);
+      }
+   }
+}
+
+
+
 
 /* _al_win_kbd_handle_key_press:
  *  Does stuff when a key is pressed.
@@ -377,26 +433,26 @@ void _al_win_kbd_handle_key_press(int scode, int vcode, bool extended,
       _al_event_source_emit_event(&the_keyboard.es, &event);
    }
 
-   /* Send char events, but not for modifier keys or dead keys. */
-   if (my_code < ALLEGRO_KEY_MODIFIERS) {
-      char_count = ToUnicode(vcode, scode, GetKeyboardState(ks) ? ks : NULL, buf, 8, 0);
-      /* Send ASCII code 127 for both Del keys. */
-      if (char_count == 0 && vcode == VK_DELETE) {
-         char_count = 1;
-         buf[0] = 127;
-      }
-      if (char_count != -1) { /* -1 means it was a dead key. */
-         event_count = char_count ? char_count : 1;
-         event.keyboard.type = ALLEGRO_EVENT_KEY_CHAR;
-         update_toggle_modifiers();
-         event.keyboard.modifiers = modifiers;
-         event.keyboard.repeat = actual_repeat;
-         for (i = 0; i < event_count; i++) {
-            event.keyboard.unichar = buf[i];
-            _al_event_source_emit_event(&the_keyboard.es, &event);
-         }
-      }
-   }
+   //~ /* Send char events, but not for modifier keys or dead keys. */
+   //~ if (my_code < ALLEGRO_KEY_MODIFIERS) {
+      //~ char_count = ToUnicode(vcode, scode, GetKeyboardState(ks) ? ks : NULL, buf, 8, 0);
+      //~ /* Send ASCII code 127 for both Del keys. */
+      //~ if (char_count == 0 && vcode == VK_DELETE) {
+         //~ char_count = 1;
+         //~ buf[0] = 127;
+      //~ }
+      //~ if (char_count != -1) { /* -1 means it was a dead key. */
+         //~ event_count = char_count ? char_count : 1;
+         //~ event.keyboard.type = ALLEGRO_EVENT_KEY_CHAR;
+         //~ update_toggle_modifiers();
+         //~ event.keyboard.modifiers = modifiers;
+         //~ event.keyboard.repeat = actual_repeat;
+         //~ for (i = 0; i < event_count; i++) {
+            //~ event.keyboard.unichar = buf[i];
+            //~ _al_event_source_emit_event(&the_keyboard.es, &event);
+         //~ }
+      //~ }
+   //~ }
    _al_event_source_unlock(&the_keyboard.es);
 
    /* Toggle mouse grab key. */

@@ -730,6 +730,15 @@ static LRESULT CALLBACK window_callback(HWND hWnd, UINT message,
          }
          break;
       }
+      case WM_SYSCHAR:
+      case WM_CHAR: {
+         int vcode = wParam;
+         int scode = (lParam >> 16) & 0xff;
+         bool extended = (lParam >> 24) & 0x1;
+         bool repeated = (lParam >> 30) & 0x1;
+         _al_win_kbd_handle_char(scode, vcode, extended, repeated, win_display);
+         break;
+      }
       case WM_SYSKEYDOWN: {
          int vcode = wParam;
          int scode = (lParam >> 16) & 0xff;

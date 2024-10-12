@@ -1314,8 +1314,10 @@ static void display_thread_proc(void *arg)
 
    while (!win_disp->end_thread) {
       /* get a message from the queue */
-      if (GetMessage(&msg, NULL, 0, 0) != 0)
+      if (GetMessage(&msg, NULL, 0, 0) != 0) {
+         TranslateMessage(&msg);
          DispatchMessage(&msg);
+      }
       else
          break;                 /* WM_QUIT received or error (GetMessage returned -1)  */
    }

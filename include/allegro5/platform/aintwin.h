@@ -126,6 +126,8 @@ void _al_win_kbd_handle_key_press(int scode, int vcode, bool extended,
                            bool repeated, ALLEGRO_DISPLAY_WIN *win_disp);
 void _al_win_kbd_handle_key_release(int scode, int vcode, bool extended,
                            ALLEGRO_DISPLAY_WIN *win_disp);
+void _al_win_kbd_handle_char(int scode, int unichar, bool extended,
+                             bool repeated, ALLEGRO_DISPLAY_WIN *win_disp);
 void _al_win_fix_modifiers(void);
 
 /* mouse routines */
