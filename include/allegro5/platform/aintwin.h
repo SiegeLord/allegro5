@@ -123,7 +123,7 @@ void _al_win_grab_input(ALLEGRO_DISPLAY_WIN *win_disp);
 
 /* keyboard routines */
 void _al_win_kbd_handle_key_press(int scode, int vcode, bool extended,
-                           bool repeated, ALLEGRO_DISPLAY_WIN *win_disp);
+                           bool repeated, bool system, ALLEGRO_DISPLAY_WIN *win_disp);
 void _al_win_kbd_handle_key_release(int scode, int vcode, bool extended,
                            ALLEGRO_DISPLAY_WIN *win_disp);
 void _al_win_kbd_handle_char(int scode, int unichar, bool extended,

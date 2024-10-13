@@ -375,7 +375,7 @@ void _al_win_kbd_handle_char(int scode, int unichar, bool extended,
       }
    }
 }
-
+#include <stdio.h>
 
 
 
@@ -383,7 +383,7 @@ void _al_win_kbd_handle_char(int scode, int unichar, bool extended,
  *  Does stuff when a key is pressed.
  */
 void _al_win_kbd_handle_key_press(int scode, int vcode, bool extended,
-                           bool repeated, ALLEGRO_DISPLAY_WIN *win_disp)
+                                  bool repeated, bool system, ALLEGRO_DISPLAY_WIN *win_disp)
 {
    ALLEGRO_DISPLAY *display = (ALLEGRO_DISPLAY *)win_disp;
    ALLEGRO_EVENT event;
@@ -433,9 +433,10 @@ void _al_win_kbd_handle_key_press(int scode, int vcode, bool extended,
       _al_event_source_emit_event(&the_keyboard.es, &event);
    }
 
-   //~ /* Send char events, but not for modifier keys or dead keys. */
+   /* Send char events, but not for modifier keys or dead keys. */
    //~ if (my_code < ALLEGRO_KEY_MODIFIERS) {
       //~ char_count = ToUnicode(vcode, scode, GetKeyboardState(ks) ? ks : NULL, buf, 8, 0);
+      //~ printf("char_count: %d\n", char_count); fflush(stdout);
       //~ /* Send ASCII code 127 for both Del keys. */
       //~ if (char_count == 0 && vcode == VK_DELETE) {
          //~ char_count = 1;
@@ -453,6 +454,15 @@ void _al_win_kbd_handle_key_press(int scode, int vcode, bool extended,
          //~ }
       //~ }
    //~ }
+   printf("my_code: %d %d %d %d %d\n", my_code, vcode, my_code < ALLEGRO_KEY_MODIFIERS, vcode < 0x30 || vcode > 0x5A, !system); fflush(stdout);
+   if (my_code < ALLEGRO_KEY_MODIFIERS && (vcode < 0x30 || vcode > 0x5A) && (vcode < 0xBA || vcode > 0xE5) && !system) {
+      event.keyboard.type = ALLEGRO_EVENT_KEY_CHAR;
+      update_toggle_modifiers();
+      event.keyboard.modifiers = modifiers;
+      event.keyboard.repeat = actual_repeat;
+      event.keyboard.unichar = vcode == VK_DELETE ? 127 : 0;
+      _al_event_source_emit_event(&the_keyboard.es, &event);
+   }
    _al_event_source_unlock(&the_keyboard.es);
 
    /* Toggle mouse grab key. */

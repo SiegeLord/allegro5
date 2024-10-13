@@ -429,7 +429,7 @@ static void resize_event_thread_proc(void *arg)
    }
    resize_event_thread_ended = true;
 }
-
+#include <stdio.h>
 static LRESULT CALLBACK window_callback(HWND hWnd, UINT message,
     WPARAM wParam, LPARAM lParam)
 {
@@ -740,11 +740,12 @@ static LRESULT CALLBACK window_callback(HWND hWnd, UINT message,
          break;
       }
       case WM_SYSKEYDOWN: {
+         printf("Is system\n"); fflush(stdout);
          int vcode = wParam;
          int scode = (lParam >> 16) & 0xff;
          bool extended = (lParam >> 24) & 0x1;
          bool repeated  = (lParam >> 30) & 0x1;
-         _al_win_kbd_handle_key_press(scode, vcode, extended, repeated, win_display);
+         _al_win_kbd_handle_key_press(scode, vcode, extended, repeated, true, win_display);
          break;
       }
       case WM_KEYDOWN: {
@@ -754,7 +755,7 @@ static LRESULT CALLBACK window_callback(HWND hWnd, UINT message,
          bool repeated = (lParam >> 30) & 0x1;
          /* We can't use TranslateMessage() because we don't know if it will
             produce a WM_CHAR or not. */
-         _al_win_kbd_handle_key_press(scode, vcode, extended, repeated, win_display);
+         _al_win_kbd_handle_key_press(scode, vcode, extended, repeated, false, win_display);
          break;
       }
       case WM_SYSKEYUP:
