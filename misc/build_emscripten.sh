@@ -33,10 +33,22 @@ emcmake cmake -S . -B build_emscripten \
     -D WANT_OPENAL=OFF \
     -D ALLEGRO_WAIT_EVENT_SLEEP=ON \
     -D SDL2_INCLUDE_DIR=$EM_CACHE/sysroot/include \
+    -D SDL2_LIBRARY=$EM_CACHE/sysroot/lib/wasm32-emscripten/libSDL2.a \
     -D CMAKE_C_FLAGS="${USE_FLAGS[*]}" \
     -D CMAKE_CXX_FLAGS="${USE_FLAGS[*]}" \
-    -D CMAKE_EXE_LINKER_FLAGS="${USE_FLAGS[*]} --preload-file $PRELOAD_DIR@/data" \
-    -D CMAKE_EXECUTABLE_SUFFIX_CXX=".html"
+    -D CMAKE_EXE_LINKER_FLAGS="${USE_FLAGS[*]}" \
+    -D CMAKE_EXECUTABLE_SUFFIX_CXX=".html" \
+    -D PNG_PNG_INCLUDE_DIR=$EM_CACHE/sysroot/include \
+    -D PNG_LIBRARY=$EM_CACHE/sysroot/lib/wasm32-emscripten/libpng.a \
+    -D JPEG_INCLUDE_DIR=$EM_CACHE/sysroot/include \
+    -D JPEG_LIBRARY=$EM_CACHE/sysroot/lib/wasm32-emscripten/libjpeg.a \
+    -D FREETYPE_INCLUDE_DIRS=$EM_CACHE/sysroot/include \
+    -D FREETYPE_LIBRARY=$EM_CACHE/sysroot/lib/wasm32-emscripten/libfreetype.a \
+    -D VORBIS_INCLUDE_DIR=$EM_CACHE/sysroot/include/vorbis \
+    -D VORBIS_LIBRARY=$EM_CACHE/sysroot/lib/wasm32-emscripten/libvorbis.a \
+    -D VORBISFILE_LIBRARY=$EM_CACHE/sysroot/lib/wasm32-emscripten/libvorbis.a \
+    -D OGG_INCLUDE_DIR=$EM_CACHE/sysroot/include \
+    -D OGG_LIBRARY=$EM_CACHE/sysroot/lib/wasm32-emscripten/libogg.a
 
 echo finished configuring build
 echo

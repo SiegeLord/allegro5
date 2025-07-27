@@ -719,8 +719,9 @@ set(CONFIGURATION_SUMMARY "${CONFIGURATION_SUMMARY}${OPENGL_SUMMARY}\n")
 #
 
 if(UNIX) # includes MACOSX
+    #if(NOT IPHONE AND NOT ANDROID AND NOT EMSCRIPTEN)
     if(NOT IPHONE AND NOT ANDROID)
-        find_package(Threads)
+        #find_package(Threads)
         if(NOT CMAKE_USE_PTHREADS_INIT)
             message(FATAL_ERROR
                 "Unix port requires pthreads support, not detected.")

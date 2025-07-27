@@ -91,6 +91,9 @@ function(example name)
         add_our_executable("${name}" SRCS "${sources}" LIBS "${libs}")
     endif()
     add_dependencies("${name}" copy_example_data)
+    if(EMSCRIPTEN)
+        target_link_options("${name}" PRIVATE --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/data@/data")
+    endif()
 endfunction(example)
 
 #-----------------------------------------------------------------------------#

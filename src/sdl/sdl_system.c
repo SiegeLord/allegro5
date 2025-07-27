@@ -150,7 +150,7 @@ static ALLEGRO_SYSTEM *sdl_initialize(int flags)
    s->system.vt = vt;
 
    // TODO: map allegro flags to sdl flags.
-   unsigned int sdl_flags = SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS | SDL_INIT_HAPTIC;
+   unsigned int sdl_flags = SDL_INIT_VIDEO | SDL_INIT_AUDIO;// | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS | SDL_INIT_HAPTIC;
    if (SDL_Init(sdl_flags) < 0) {
       ALLEGRO_ERROR("SDL_Init failed: %s", SDL_GetError());
       return NULL;

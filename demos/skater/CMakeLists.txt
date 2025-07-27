@@ -141,6 +141,10 @@ copy_data_dir_to_build(copy_skater_data
     "${CMAKE_CURRENT_BINARY_DIR}/data"
     )
 
+if(EMSCRIPTEN)
+    target_link_options(skater PRIVATE --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/data@/data")
+endif()
+
 add_dependencies(skater copy_skater_data copy_example_data)
 
 #-----------------------------------------------------------------------------#
