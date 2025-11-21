@@ -815,31 +815,32 @@ void _al_default_draw_batch(ALLEGRO_DISPLAY *disp)
    if (disp->batch_indices_length == 0)
       goto exit;
 
-   if (!disp->batch_vertex_buffer) {
-      disp->batch_vertex_buffer = _al_create_vertex_buffer(disp->batch_vertex_decl, NULL, max_batch_size, ALLEGRO_PRIM_BUFFER_DYNAMIC);
-   }
-   if (!disp->batch_vertex_buffer)
-      goto exit;
+   //~ if (!disp->batch_vertex_buffer) {
+      //~ disp->batch_vertex_buffer = _al_create_vertex_buffer(disp->batch_vertex_decl, NULL, max_batch_size, ALLEGRO_PRIM_BUFFER_DYNAMIC);
+   //~ }
+   //~ if (!disp->batch_vertex_buffer)
+      //~ goto exit;
 
-   if (!disp->batch_index_buffer)
-      disp->batch_index_buffer = _al_create_index_buffer(disp->index_size, NULL, max_batch_size, ALLEGRO_PRIM_BUFFER_DYNAMIC);
-   if (!disp->batch_index_buffer)
-      goto exit;
+   //~ if (!disp->batch_index_buffer)
+      //~ disp->batch_index_buffer = _al_create_index_buffer(disp->index_size, NULL, max_batch_size, ALLEGRO_PRIM_BUFFER_DYNAMIC);
+   //~ if (!disp->batch_index_buffer)
+      //~ goto exit;
 
-   void *batch_vertices = _al_lock_vertex_buffer(disp->batch_vertex_buffer, 0, disp->batch_vertices_length, ALLEGRO_LOCK_WRITEONLY);
-   if (!batch_vertices)
-      goto exit;
-   void *batch_indices = _al_lock_index_buffer(disp->batch_index_buffer, 0, disp->batch_indices_length, ALLEGRO_LOCK_WRITEONLY);
-   if (!batch_indices)
-      goto exit;
+   //~ void *batch_vertices = _al_lock_vertex_buffer(disp->batch_vertex_buffer, 0, disp->batch_vertices_length, ALLEGRO_LOCK_WRITEONLY);
+   //~ if (!batch_vertices)
+      //~ goto exit;
+   //~ void *batch_indices = _al_lock_index_buffer(disp->batch_index_buffer, 0, disp->batch_indices_length, ALLEGRO_LOCK_WRITEONLY);
+   //~ if (!batch_indices)
+      //~ goto exit;
 
-   memcpy(batch_vertices, disp->batch_vertices, disp->batch_vertices_length * sizeof(ALLEGRO_VERTEX));
-   memcpy(batch_indices, disp->batch_indices, disp->batch_indices_length * disp->index_size);
+   //~ memcpy(batch_vertices, disp->batch_vertices, disp->batch_vertices_length * sizeof(ALLEGRO_VERTEX));
+   //~ memcpy(batch_indices, disp->batch_indices, disp->batch_indices_length * disp->index_size);
 
-   _al_unlock_vertex_buffer(disp->batch_vertex_buffer);
-   _al_unlock_index_buffer(disp->batch_index_buffer);
+   //~ _al_unlock_vertex_buffer(disp->batch_vertex_buffer);
+   //~ _al_unlock_index_buffer(disp->batch_index_buffer);
 
-   _al_draw_indexed_buffer(disp->batch_vertex_buffer, disp->batch_bitmap, disp->batch_index_buffer, 0, disp->batch_indices_length, ALLEGRO_PRIM_TRIANGLE_LIST);
+   //~ _al_draw_indexed_buffer(disp->batch_vertex_buffer, disp->batch_bitmap, disp->batch_index_buffer, 0, disp->batch_indices_length, ALLEGRO_PRIM_TRIANGLE_LIST);
+   _al_draw_indexed_prim(disp->batch_vertices, disp->batch_vertex_decl, disp->batch_bitmap, disp->batch_indices, disp->batch_indices_length, ALLEGRO_PRIM_TRIANGLE_LIST);
 
 exit:
    disp->batch_vertices_length = 0;
