@@ -339,7 +339,7 @@ static void shader_texture_grad_any_step(uintptr_t state, int minor_step)
       s->solid.color.b += s->major_color.b;
    }
 }
-
+#include <stdio.h>
 static void line_stepper(uintptr_t state, shader_first first, shader_step step, shader_draw draw, ALLEGRO_VERTEX* vtx1, ALLEGRO_VERTEX* vtx2)
 {
    float x1, y1, x2, y2;
@@ -352,11 +352,13 @@ static void line_stepper(uintptr_t state, shader_first first, shader_step step, 
       vtx1 = vtx2;
       vtx2 = t;
    }
+   
+   printf("raw x1/y1 %f %f\n", vtx1->x, vtx1->y); printf("raw x2/y2 %f %f\n", vtx2->x, vtx2->y);
 
-   vtx1->x -= 0.5001f;
-   vtx1->y -= 0.5001f;
-   vtx2->x -= 0.5001f;
-   vtx2->y -= 0.5001f;
+   vtx1->x += 0.5f;
+   vtx1->y += 0.5f;
+   vtx2->x += 0.5f;
+   vtx2->y += 0.5f;
 
    x1 = vtx1->x;
    y1 = vtx1->y;
@@ -366,23 +368,26 @@ static void line_stepper(uintptr_t state, shader_first first, shader_step step, 
    dx = x2 - x1;
    dy = y2 - y1;
 
-   end_x = floorf(x2 + 0.5f);
-   end_y = floorf(y2 + 0.5f);
+   end_x = floorf(x2);
+   end_y = floorf(y2);
 
 #define FIRST                                                              \
-   first(state, x, y, vtx1, vtx2);                                         \
-   if((x2 - x1) * ((float)x - x1) + (y2 - y1) * ((float)y - y1) >= 0)      \
-      draw(state, x, y);                                                   \
+   printf("x1/y1 %f %f\n", x1, y1); printf("x2/y2 %f %f\n", x2, y2);first(state, x, y, vtx1, vtx2); printf("Err first: %d %d %f\n", x, y, (x2 - x1) * ((float)x - x1) + (y2 - y1) * ((float)y - y1));                                         \
+   if((x2 - x1) * ((float)x - x1) + (y2 - y1) * ((float)y - y1) >= 0) {      \
+      printf("first %d %d\n", x, y); fflush(stdout); \
+      draw(state, x, y); }                                                  \
    (void)minor;
 
 #define STEP                                                               \
    step(state, minor);                                                     \
+   printf("step %d %d\n", x, y); fflush(stdout);                                \
    draw(state, x, y);
 
 #define LAST                                                               \
-   step(state, minor);                                                     \
-   if((x1 - x2) * ((float)x - x2) + (y1 - y2) * ((float)y - y2) > 0)       \
-      draw(state, x, y);
+   step(state, minor); printf("Err last: %d %d: %f\n", x, y, (x1 - x2) * ((float)x - x2) + (y1 - y2) * ((float)y - y2));                                                     \
+   if((x1 - x2) * ((float)x - x2) + (y1 - y2) * ((float)y - y2) > 0) {       \
+      printf("last %d %d\n", x, y); fflush(stdout); \
+      draw(state, x, y); }
 
 
 #define WORKER(var1, var2, comp, dvar1, dvar2, derr1, derr2, func)         \
@@ -403,7 +408,8 @@ static void line_stepper(uintptr_t state, shader_first first, shader_step step, 
 
    if (dx > 0) {
       if (dx > dy) {
-         int x = floorf(x1 + 0.5f);
+         printf("A\n"); fflush(stdout);
+         int x = floorf(x1);
          int y = floorf(y1);
 
          float err = (y1 - (float)y) * dx - (x1 - (float)x) * dy;
@@ -421,12 +427,16 @@ static void line_stepper(uintptr_t state, shader_first first, shader_step step, 
 
          }
       } else {
+         printf("B\n"); fflush(stdout);
          int x = floorf(x1);
          int y = floorf(y1 + 0.5f);
+         printf("start_x/y: %d %d\n", x, y);
+         printf("end_x/y: %d %d\n", end_x, end_y);
 
          float err = (x1 - (float)x) * dy - (y1 - (float)y) * dx;
 
          if (y < end_y) {
+            printf("Cand first\n");
             WORKER(x, y, > 0.5f * dy, 1, 1, -dy, dx, FIRST)
          }
 
@@ -440,7 +450,8 @@ static void line_stepper(uintptr_t state, shader_first first, shader_step step, 
       }
    } else {
       if (-dx > dy) {
-         int x = floorf(x1 + 0.5f);
+         printf("C\n"); fflush(stdout);
+         int x = floorf(x1);
          int y = floorf(y1);
 
          float err = (y1 - (float)y) * dx - (x1 - (float)x) * dy;
@@ -457,8 +468,9 @@ static void line_stepper(uintptr_t state, shader_first first, shader_step step, 
             WORKER(y, x, <= 0.5f * dx, 1, -1, -dx, -dy, LAST)
          }
       } else {
+         printf("D\n"); fflush(stdout);
          int x = floorf(x1);
-         int y = floorf(y1 + 0.5f);
+         int y = floorf(y1);
 
          float err = (x1 - (float)x) * dy - (y1 - (float)y) * dx;
 
@@ -469,6 +481,8 @@ static void line_stepper(uintptr_t state, shader_first first, shader_step step, 
             x += 1;
             err -= dy;
          }
+         printf("start_x/y: %d %d\n", x, y);
+         printf("end_x/y: %d %d\n", end_x, end_y);
 
          if (y < end_y) {
             WORKER(x, y, <= -0.5f * dy, -1, 1, dy, dx, FIRST)
@@ -479,6 +493,7 @@ static void line_stepper(uintptr_t state, shader_first first, shader_step step, 
          }
 
          if (y <= end_y) {
+            printf("Cand last\n");
             WORKER(x, y, <= -0.5f * dy, -1, 1, dy, dx, LAST)
          }
       }

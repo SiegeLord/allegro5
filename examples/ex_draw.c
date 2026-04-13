@@ -167,6 +167,7 @@ static void draw(void)
          x + rects[i * 4 + 2],
          y + rects[i * 4 + 3],
          rgba, false);
+      //~ break;
    }
 
    al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
@@ -191,6 +192,7 @@ static void draw(void)
 
    /* Draw outlines. */
    for (i = 0; i < rects_num; i++) {
+      break;
       primitive(
          x + rects[i * 4 + 0] * 16,
          y + rects[i * 4 + 1] * 16,
@@ -213,12 +215,16 @@ static void tick(void)
 {
    draw();
    al_flip_display();
+   al_rest(5.0);
+   exit(0);
 }
 
 static void run(void)
 {
    ALLEGRO_EVENT event;
    bool need_draw = true;
+   ex.what = 3;
+   ex.software = true;
 
    while (1) {
       if (need_draw && al_is_event_queue_empty(ex.queue)) {
