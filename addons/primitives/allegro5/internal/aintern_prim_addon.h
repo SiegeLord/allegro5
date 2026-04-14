@@ -20,11 +20,12 @@ typedef struct ALLEGRO_PRIM_VERTEX_CACHE {
    ALLEGRO_COLOR   color;
    int             prim_type;
    void*           user_data;
+   float           u_ref;
+   float           v_ref;
 } ALLEGRO_PRIM_VERTEX_CACHE;
 
 /* Internal cache for primitives. */
-void _al_prim_cache_init(ALLEGRO_PRIM_VERTEX_CACHE* cache, int prim_type, ALLEGRO_COLOR color);
-void _al_prim_cache_init_ex(ALLEGRO_PRIM_VERTEX_CACHE* cache, int prim_type, ALLEGRO_COLOR color, void* user_data);
+void _al_prim_cache_init(ALLEGRO_PRIM_VERTEX_CACHE* cache, int prim_type, ALLEGRO_COLOR color, void* user_data, float u_ref, float v_ref);
 void _al_prim_cache_term(ALLEGRO_PRIM_VERTEX_CACHE* cache);
 void _al_prim_cache_flush(ALLEGRO_PRIM_VERTEX_CACHE* cache);
 void _al_prim_cache_push_point(ALLEGRO_PRIM_VERTEX_CACHE* cache, const float* v);

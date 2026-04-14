@@ -498,7 +498,7 @@ static void do_draw_polyline(ALLEGRO_PRIM_VERTEX_CACHE* cache, const float* vert
 {
    if (thickness > 0.0f)
    {
-      _al_prim_cache_init(cache, ALLEGRO_PRIM_VERTEX_CACHE_TRIANGLE, color);
+      _al_prim_cache_init(cache, ALLEGRO_PRIM_VERTEX_CACHE_TRIANGLE, color, NULL, 0., 0.);
       emit_polyline(cache, vertices, vertex_stride, vertex_count, join_style, cap_style, thickness, miter_limit);
       _al_prim_cache_term(cache);
    }
@@ -508,7 +508,7 @@ static void do_draw_polyline(ALLEGRO_PRIM_VERTEX_CACHE* cache, const float* vert
 
       int i;
 
-      _al_prim_cache_init(cache, ALLEGRO_PRIM_VERTEX_CACHE_LINE_STRIP, color);
+      _al_prim_cache_init(cache, ALLEGRO_PRIM_VERTEX_CACHE_LINE_STRIP, color, NULL, 0., 0.);
 
       for (i = 0; i < vertex_count; ++i) {
          if (cache->size >= (ALLEGRO_VERTEX_CACHE_SIZE - 2))

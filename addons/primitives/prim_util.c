@@ -164,18 +164,15 @@ bool _al_prim_are_points_equal(const float* point_a, const float* point_b)
 /*
  *
  */
-void _al_prim_cache_init(ALLEGRO_PRIM_VERTEX_CACHE* cache, int prim_type, ALLEGRO_COLOR color)
-{
-   _al_prim_cache_init_ex(cache, prim_type, color, NULL);
-}
-
-void _al_prim_cache_init_ex(ALLEGRO_PRIM_VERTEX_CACHE* cache, int prim_type, ALLEGRO_COLOR color, void* user_data)
+void _al_prim_cache_init(ALLEGRO_PRIM_VERTEX_CACHE* cache, int prim_type, ALLEGRO_COLOR color, void* user_data, float u_ref, float v_ref)
 {
    cache->size      = 0;
    cache->current   = cache->buffer;
    cache->color     = color;
    cache->prim_type = prim_type;
    cache->user_data = user_data;
+   cache->u_ref     = u_ref;
+   cache->v_ref     = v_ref;
 }
 
 void _al_prim_cache_term(ALLEGRO_PRIM_VERTEX_CACHE* cache)
