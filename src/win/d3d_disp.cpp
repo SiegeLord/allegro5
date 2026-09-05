@@ -2923,8 +2923,11 @@ static void d3d_draw_batch(ALLEGRO_DISPLAY *disp)
          _al_draw_indexed_prim(disp->batch_vertices, disp->batch_vertex_decl, disp->batch_bitmap,
             (const int*)disp->batch_indices, disp->batch_indices_length, ALLEGRO_PRIM_TRIANGLE_LIST);
    }
-   else
+   else {
+      /* D3D buffers don't have a sufficiently efficient update API for us to use. */
+      disp->batch_use_buffers = false;
       _al_default_draw_batch(disp);
+   }
 exit:
    disp->batch_vertices_length = 0;
    disp->batch_indices_length = 0;
@@ -3950,11 +3953,15 @@ ALLEGRO_DISPLAY_INTERFACE *_al_display_d3d_driver(void)
    vt->destroy_vertex_buffer = d3d_destroy_vertex_buffer;
    vt->lock_vertex_buffer = d3d_lock_vertex_buffer;
    vt->unlock_vertex_buffer = d3d_unlock_vertex_buffer;
+   vt->update_vertex_buffer = d3d_update_vertex_buffer;
+   vt->resize_vertex_buffer = d3d_resize_vertex_buffer;
 
    vt->create_index_buffer = d3d_create_index_buffer;
    vt->destroy_index_buffer = d3d_destroy_index_buffer;
    vt->lock_index_buffer = d3d_lock_index_buffer;
    vt->unlock_index_buffer = d3d_unlock_index_buffer;
+   vt->update_index_buffer = d3d_update_index_buffer;
+   vt->resize_index_buffer = d3d_resize_index_buffer;
 
    vt->draw_vertex_buffer = d3d_draw_vertex_buffer;
    vt->draw_indexed_buffer = d3d_draw_indexed_buffer;

@@ -518,6 +518,8 @@ int main(int argc, char **argv)
    }
 
    al_destroy_bitmap(example.bitmap);
+   al_destroy_display(example.display);
+   close_log(true);
 
    return 0;
 }

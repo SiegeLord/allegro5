@@ -80,7 +80,7 @@ ALLEGRO_DISPLAY *al_create_display(int w, int h)
    display->cache_texture = 0;
    al_identity_transform(&display->projview_transform);
 
-   display->batch_use_indices = false;
+   display->batch_use_indices = true;
    display->batch_use_buffers = true;
 
    display->default_shader = NULL;
