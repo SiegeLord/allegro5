@@ -178,7 +178,7 @@ struct ALLEGRO_DISPLAY
    int batch_vertices_capacity;
    int batch_indices_capacity;
    bool batch_enabled;
-   /* Only for bitmaps! Primitives switch based on whether*/
+   /* Only for bitmaps! Primitives always use indices when drawing is held. */
    bool batch_use_indices;
    bool batch_use_buffers;
 
