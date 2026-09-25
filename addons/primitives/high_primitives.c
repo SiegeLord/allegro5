@@ -766,7 +766,9 @@ void al_draw_pieslice(float cx, float cy, float r, float start_theta,
       float connect_len = ht / sine_half_delta;
       bool blunt_tip = connect_len > 2 * thickness;
 
-      /* The angle is big enough for there to be a hole in the middle */
+      /* The angle is big enough for there to be a hole in the middle.
+       * Note that central_angle can be NaN here as well due to inner_side_angle
+       * being NaN when ht is too high. */
       if (central_angle > 0) {
          VTX coords[ALLEGRO_VERTEX_CACHE_SIZE];
          float central_start_angle = start_theta + inner_side_angle;
