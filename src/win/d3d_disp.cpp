@@ -3392,7 +3392,7 @@ static int draw_prim_common(ALLEGRO_BITMAP* target, ALLEGRO_BITMAP* texture,
                for(ii = 0; ii < num_vtx; ii++)
                {
                   run_length++;
-                  if(indices[ii] + 1 != indices[ii + 1] || ii == num_vtx - 1) {
+                  if(ii == num_vtx - 1 || indices[ii] + 1 != indices[ii + 1]) {
                      device->DrawPrimitiveUP(D3DPT_POINTLIST, run_length, (const char*)vtx + start_idx * stride, stride);
                      if(ii != num_vtx - 1)
                         start_idx = indices[ii + 1];
